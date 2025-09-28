@@ -1,51 +1,5 @@
 {
     "Categories": {
-        "garbage": {
-            "CooldownTime": 1800.0,
-            "HazardChance": 0.20,
-            "GloveDamageMin": 5,
-            "GloveDamageMax": 15,
-            "Events": {
-                "ZombieSpawn": {
-                    "Chance": 0.0,
-                    "CountMin": 1,
-                    "CountMax": 2,
-                    "SpawnRadius": 12.0,
-                    "ZombieTypes": [],
-                    "AlertNoiseStrength": 50.0,
-                    "AlertNoiseRange": 30.0,
-                    "FlavorText": "Your rummaging makes a lot of noise and draws immediate attention from nearby infected!"
-                },
-                "Smoke": {
-                    "Chance": 0.0,
-                    "Classname": "M18SmokeGrenade_Red",
-                    "FuseSeconds": 1.0,
-                    "FlavorText": "You jostle the stash and a smoke grenade hisses, flooding the area."
-                },
-                "Gas": {
-                    "Chance": 0.0,
-                    "Classname": "Grenade_ChemGas",
-                    "FuseSeconds": 1.0,
-                    "FlavorText": "You disturb the cache and a toxic canister pops, releasing choking gas."
-                },
-                "KnockOut": {
-                    "Chance": 0.0,
-                    "DurationSeconds": 12.0,
-                    "HealthDamage": 0.0,
-                    "FlavorText": "A heavy hit staggers you and you collapse unconscious."
-                },
-                "Shock": {
-                    "Chance": 0.0,
-                    "ShockAmount": 50.0,
-                    "HealthDamage": 0.0,
-                    "FlavorText": "A surge of electricity tears through you. Your muscles seize!"
-                },
-                "SirenAlarm": {
-                    "Chance": 0.0,
-                    "FlavorText": "An air-raid siren blares across the area!"
-                }
-            }
-        },
         "general": {
             "CooldownTime": 1800.0,
             "HazardChance": 0.20,

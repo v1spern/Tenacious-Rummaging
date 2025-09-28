@@ -5,7 +5,9 @@ Welcome to the Github repo for DayZ mod "Tenacious Rummaging"! You can find the 
 The Tenacious DayZ community has its own server with this mod on it. Everyone are welcome to come try it! Server details can be found over at our discord, here: http://discord.gg/WaCXkWSrwe
 
 #### Support
-You can find support-channels on our discord (link above). Go look for the "mod-support" channel in the "Tenacious Mods" channel category.
+First and foremost, check out the [Wiki her on Github](https://github.com/v1spern/Tenacious-Rummaging/wiki/LootSettings.json) for mod guidance.
+
+You can also find support-channels on our discord (link above). Go look for the "mod-support" channel in the "Tenacious Mods" channel category.
 
 #### Config examples
 Look at this repos Wiki for guides on how to set up the JSON structures. Also check out the examples in the "Example configs" folder.
