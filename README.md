@@ -44,9 +44,26 @@ Feature list
 
 ## About
 
-
 #### Legal stuff
 This mod is licensed under GNU GPL 3.0, which means you can share and change all versions of this mod as long as it remains free for all its users.
 
 **I, the author, do not allow this mod to be monetized of repacked in any way or form. This is non-negotiable, and will not be met with a repsonse.**
 
+#### Methods
+This mod was created with heavy use of AI guidance, specifically:
+* OpenAI GPT-5 High
+* OpenAI GPT-5 Codex
+* Gemini Pro 2.5
+* Claude Sonnet
+
+I am a novice coder and could not have done this without the help of AI.
+
+## Credits
+
+* A huge thank you to the Tenacious DayZ discord community for shits'n'giggles
+* Shout out to UsuallyAmie, RubixxLOL and Jordan for testing the mod, giving me lots of ideas for features, inputs and general good shit all around. You guys rock!
+
+###### Also...
+I got a lot of inspiration from other mods and modauthors on Steam, especially the "Search for Loot" mod by HunterZ, and the "DayZStory Loot Wreck System" mod by JOKER and Uncle T. Thank you for all the work you've done. This mod would not have been possible without the previous work of the DayZ modder community.
+
+Lastly, a shoutout to the DayZ Modders discord! The best modding resource on the entire interwebs, hands down.
