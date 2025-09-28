@@ -1,0 +1,183 @@
+{
+	"groups": {
+		"kitchen_cabinets": {
+			"chance": 0.10,
+			"minItems": 1,
+			"maxItems": 2,
+      		"cooldownMessage": [
+    		  "Every drawer stands ajar, crumbs scattered - someone tore through here minutes ago.",
+    		  "Spice lids rolling on the floor; shelves bare. Whoever came already cleaned house.",
+    		  "The cupboard doors are caked with greasy fingerprints everywhere. This kitchen's treasures are gone."
+    		],
+			"items": [
+			  { "type": "CanOpener", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "KitchenKnife", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "SteakKnife", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "Pot", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "PortableGasStove", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+		
+			  { "type": "Matchbox", "weight": 35, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "KitchenTimer", "weight": 45, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+		
+			  { "type": "BoxCerealCrunchin", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "PowderedMilk", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "Rice", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "Marmalade", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "Honey", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+		
+			  { "type": "BakedBeansCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "SpaghettiCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "SardinesCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "TunaCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "PeachesCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "UnknownFoodCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			  { "type": "DogFoodCan", "weight": 10, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 }
+			]		
+		},
+		"kitchen_fridge": {
+			"chance": 0.10,
+			"minItems": 1,
+			"maxItems": 1,
+      		"cooldownMessage": [
+    		  "Stale air spills out, but racks are empty - another scavenger beat you here.",
+      		  "Scratches and smudged prints on the handle; the fridge's spoils have already been claimed.",
+      		  "A lingering stench remains, yet not a scrap left - someone raided everything earlier."
+    		],
+  			"items": [
+  			  { "type": "SodaCan_Pipsi", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+  			  { "type": "SodaCan_Spite", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+  			  { "type": "SodaCan_Kvass", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+  			  { "type": "SodaCan_Fronta", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+  			  { "type": "SodaCan_Cola", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+  			  { "type": "GlassBottle", "weight": 50, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 },
+			
+  			  { "type": "BakedBeansCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+  			  { "type": "PeachesCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+  			  { "type": "TunaCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+  			  { "type": "SardinesCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+  			  { "type": "UnknownFoodCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+  			  { "type": "PorkCan_Opened", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 },
+			
+  			  { "type": "Lard", "weight": 10, "MinHealth": 0.15, "MaxHealth": 0.25, "MinQuantity": 10, "MaxQuantity": 25 }
+  			]
+		},
+		"kitchen_cleaning_supplies": {
+			"chance": 0.10,
+			"minItems": 1,
+			"maxItems": 1,
+      		"cooldownMessage": [
+    		  "A sharp chemical scent hangs heavy; empty bottles clatter - someone stripped this already.",
+    		  "Wet sponges, dripping rack, cabinet scraped bare; all cleaning agents vanished with the last looter.",
+    		  "Fresh streaks across the counter, lids missing; whoever came grabbed every useful solvent."
+    		],
+  			"items": [
+  			  { "type": "DisinfectantSpray", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 5, "MaxQuantity": 30 },
+  			  { "type": "AlcoholTincture", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 5, "MaxQuantity": 35 },
+  			  { "type": "PurificationTablets", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 2, "MaxQuantity": 6 },
+  			  { "type": "Rag", "weight": 50, "MinHealth": 0.15, "MaxHealth": 0.50, "MinQuantity": 1, "MaxQuantity": 3 },
+  			  { "type": "DuctTape", "weight": 30, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 }
+  			]
+		},
+		"kitchen_pantry_shelves": {
+			"chance": 0.10,
+			"minItems": 1,
+			"maxItems": 1,
+		    "cooldownMessage": [
+		      "A sharp chemical scent hangs heavy; empty bottles clatter - someone stripped this already.",
+		      "Wet sponges, dripping rack, cabinet scraped bare; all cleaning agents vanished with the last looter.",
+		      "Fresh streaks across the counter, lids missing; whoever came grabbed every useful solvent."
+		    ],
+		  	"items": [
+		  	  { "type": "DisinfectantSpray", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 5, "MaxQuantity": 30 },
+		  	  { "type": "AlcoholTincture", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 5, "MaxQuantity": 35 },
+		  	  { "type": "PurificationTablets", "weight": 30, "MinHealth": 0.15, "MaxHealth": 0.70, "MinQuantity": 2, "MaxQuantity": 6 },
+		  	  { "type": "Rag", "weight": 50, "MinHealth": 0.15, "MaxHealth": 0.50, "MinQuantity": 1, "MaxQuantity": 3 },
+		  	  { "type": "DuctTape", "weight": 30, "MinHealth": 0.35, "MaxHealth": 0.70, "MinQuantity": -1, "MaxQuantity": -1 }
+		  	]
+		},
+		"garbage": {
+			"chance": 0.25,
+			"minItems": 1,
+			"maxItems": 2,
+  			"cooldownMessage": [
+  			  "Bags freshly torn, this trash has already been picked through.",
+  			  "Coffee grounds on top; someone searched here a minute ago.",
+  			  "The can is overturned and empty - no scraps left."
+  			],
+			"items": [
+				{ "type": "Rope", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "Paper", "weight": 55, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "PetrolLighter", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 1, "MaxQuantity": 12 },
+				{ "type": "Matchbox", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 2, "MaxQuantity": 8 },
+				{ "type": "Chemlight_Yellow", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "Chemlight_White", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "Rag", "weight": 50, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 1, "MaxQuantity": 4 },
+				{ "type": "Nail", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 2, "MaxQuantity": 15 },
+				{ "type": "TShirt_Blue", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "TShirt_Green", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "TelnyashkaShirt", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "CanvasPantsMidi_Red", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "Skirt_Blue", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "JoggingShoes_Violet", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "DressShoes_Black", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "ChernarusSportShirt", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "DenimJacket", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "DesignerGlasses", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "BaseballBat", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "BaseballCap_Red", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "BaseballCap_Beige", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "BaseballCap_Pink", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "CanOpener", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "GlassBottle", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 1, "MaxQuantity": 15 },
+				{ "type": "WaterBottle", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 1, "MaxQuantity": 15 },
+				{ "type": "WaterproofBag_Orange", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "CourierBag", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "ChildBag_Blue", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "PorkCan", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "SardinesCan", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "TunaCan", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "UnknownFoodCan", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "KitchenKnife", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "KitchenTimer", "weight": 35, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "MKII", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "AmmoBox_22_50Rnd", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "MeatTenderizer", "weight": 20, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "DisinfectantSpray", "weight": 15, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 10, "MaxQuantity": 35 },
+				{ "type": "Battery9V", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 5, "MaxQuantity": 20 },
+				{ "type": "SewingKit", "weight": 5, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 10, "MaxQuantity": 25 },
+				{ "type": "DuctTape", "weight": 5, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": 10, "MaxQuantity": 25 }
+			]
+		},
+		"general": {
+			"chance": 0.70,
+			"minItems": 1,
+			"maxItems": 2,
+  			"cooldownMessage": [
+				"This spot looks like it has been recently searched.",
+				"Fresh scuff marks - someone beat you to it.",
+				"Too tidy. Someone picked through here already."
+			],
+			"items": [
+				{ "type": "Rag", "weight": 50, "MinHealth": 0.70, "MaxHealth": 0.90, "MinQuantity": 2, "MaxQuantity": 6 },
+				{ "type": "Matchbox", "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.50, "MinQuantity": 1, "MaxQuantity": 12 },
+				{ "type": "DuctTape", "weight": 25, "MinHealth": 0.80, "MaxHealth": 1.00, "MinQuantity": -1, "MaxQuantity": -1 }
+			]
+		},
+		"misc": {
+			"chance": 0.50,
+			"minItems": 1,
+			"maxItems": 3,
+  			"cooldownMessage": [
+				"Fresh feathers and footprints - this coop was checked moments ago.",
+				"Empty scraps and a bent latch. Someone just searched here.",
+				"You spot disturbed dust; it's been picked clean."
+			],
+			"items": [
+				{ "type": "Paper", "weight": 30, "MinHealth": 0.20, "MaxHealth": 0.90, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "Bone", "weight": 20, "MinHealth": 0.15, "MaxHealth": 0.50, "MinQuantity": 1, "MaxQuantity": 3 },
+				{ "type": "MetalWire", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.60, "MinQuantity": -1, "MaxQuantity": -1 },
+				{ "type": "WaterBottle", "weight": 15, "MinHealth": 0.10, "MaxHealth": 1.00, "MinQuantity": 1, "MaxQuantity": 50 }
+			]
+		}
+	}
+}

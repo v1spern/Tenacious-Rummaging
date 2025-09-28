@@ -1,0 +1,50 @@
+[
+    {
+        "IsClassWide": 1,
+        "ClassName": "1136264",
+        "ModelName": "garbage_pile1",
+        "Position": "<0.000000, 0.000000, 0.000000>",
+        "LootGroup": "garbage",
+        "Comment": "This is a common garbage pile"
+    },
+    {
+        "IsClassWide": 1,
+        "ClassName": "2271817",
+        "ModelName": "misc_postbox1",
+        "Position": "<0.000000, 0.000000, 0.000000>",
+        "LootGroup": "mailbox",
+        "Comment": "Standard red mailbox"
+    },
+    {
+        "IsClassWide": 1,
+        "ClassName": "1234488",
+        "ModelName": "garbage_pile4",
+        "Position": "<0.000000, 0.000000, 0.000000>",
+        "LootGroup": "garbage",
+        "Comment": "This is a medical garbage pile"
+    },
+    {
+        "IsClassWide": 1,
+        "ClassName": "land_house_2w02",
+        "ModelName": "__interior_tok__",
+        "Position": "<0 -3 -2>",
+        "LootGroup": "general",
+        "Comment": "A shoe-rack on the floor in the hallway of house model 2w02"
+    },
+    {
+        "IsClassWide": 1,
+        "ClassName": "land_house_2b01",
+        "ModelName": "__interior_tok__",
+        "Position": "-2 -3 -7",
+        "LootGroup": "general",
+        "Comment": "A Cabinet-table in the hallway of house model 2b01"
+    },
+    {
+        "IsClassWide": 1,
+        "ClassName": "land_house_1w12_brown",
+        "ModelName": "__interior_tok__",
+        "Position": "14 -2 4",
+        "LootGroup": "general",
+        "Comment": "A washing machine in a room of house model 1w12_brown"
+    }
+]
