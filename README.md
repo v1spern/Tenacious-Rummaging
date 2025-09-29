@@ -28,7 +28,7 @@ Searchable nodes come in three flavors: static (specific object instance at a qu
 
 The mod uses client-side prompt gating and server validation: clients only see the action where a synced node exists, while the server enforces cooldowns, loot rolls, hazards, and events.
 
-Admin tooling is provided in-game via the custom "AdminStone" item, which provides an interactive way to add objects as nodes in the server node database.
+Admin tooling is provided in-game via the custom "AdminStone" item, which provides an interactive way to add objects as nodes to the server node database.
 
 ### Features list
 
