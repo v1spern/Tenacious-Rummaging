@@ -30,7 +30,7 @@ The mod uses client-side prompt gating and server validation: clients only see t
 
 Admin tooling is provided in-game via the custom "AdminStone" item, which provides an interactive way to add objects as nodes in the server node database.
 
-Feature list
+### Features list
 
 * Three node types: Static, Class-Wide, and Interior (furniture).
 * Custom audio cues
