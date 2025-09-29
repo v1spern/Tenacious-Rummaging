@@ -14,32 +14,32 @@ Look at this repos Wiki for guides on how to set up the JSON structures. Also ch
 
 ## Mod description
 
-Tenacious Rummaging adds a fully server-authoritative “rummage/search” gameplay loop to DayZ by letting admins mark world objects—and even specific pieces of interior furniture—as searchable nodes.
+Tenacious Rummaging adds a fully server-authoritative “rummage/search” gameplay loop to DayZ by letting admins mark world objects and specific pieces of interior furniture as searchable nodes.
 
 Players who look at a whitelisted node gets a prompt to search that plays rummaging audio, checks against a cooldowns table, rolls against configurable loot odds, and either spawns weighted loot or fires “failure” events (e.g., zombie aggro, smoke/gas, shock/KO, siren alarm, or even custom events - to a certain degree!).
 
 All configuration lives under $profile:TenaciousRummaging/ in standard JSON files:
-* SearchableNodes.json (what can be searched)
+* SearchableNodes.json (searchable nodes database)
 * LootGroups.json (what can drop, with weights and item health/quantity overrides)
-* LootSettings.json (per-category cooldown, hazard, and event knobs)
-* Cooldowns.json (persisted per-player/global cooldowns)
+* LootSettings.json (per-category cooldown, hazard, and event settings)
+* Cooldowns.json (persistent global or per-player cooldowns across reboots)
 
-Searchable nodes come in three flavors: static (specific object instance at a quantized position), class-wide (every instance of a given class), and interior-piece (fine-grained furniture “tokens” inside houses, computed from the player’s local position and selection, not just the house itself).
+Searchable nodes come in three flavors: static (specific object instance at a quantized position), class-wide (every instance of a given class), and interior (fine-grained furniture inside houses).
 
-The mod ships client-side prompt gating and tight server validation: clients only see the action where a synced node exists, while the server enforces cooldowns, loot rolls, hazards, and events.
+The mod uses client-side prompt gating and server validation: clients only see the action where a synced node exists, while the server enforces cooldowns, loot rolls, hazards, and events.
 
-Admin tooling is in-game (AdminStone in hands) and writes changes immediately, then RPC-syncs to clients. The result is a configurable, low-friction rummaging system that’s extensible without repacks.
+Admin tooling is provided in-game via the custom "AdminStone" item, which provides an interactive way to add objects as nodes in the server node database.
 
 Feature list
 
-* Three node types: Static, Class-Wide, Interior-Piece (fine furniture tokens).
+* Three node types: Static, Class-Wide, and Interior (furniture).
 * Custom audio cues
 * Hazard chance when looting
-* Flavor text for each action, configurable in the config with fallback texts
+* Flavor text for each action; configurable in the config, with fallback texts
 * Triggerable event chance when looting (zombies, gas, smoke, shock, knock-out and siren-alarm)
-* Client-side prompt whitelist (no spammy actions; interior prompts only in valid contexts).
+* Client-side prompt whitelist (prompts only in valid contexts).
 * Admin-item gated in-game authoring actions for all node types.
-* Robust and detailed JSON driven config of all the loot-related functions in the mod.
+* Robust, highly dynamic and detailed config of all the loot- and event-related functions in the mod.
 * Server-authoritative match & spawn with position quantization and radius fallback for statics.
 * Search logger: logs each attempt in either predetermined .log, or additionally in a CSV document with CSV-formatted lines (player, node key, roll/chance, outcome). Toggleable in the config.
 * Central debug helper with consistent prefixes and gating. Toggleable in the config.

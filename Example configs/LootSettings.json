@@ -24,7 +24,7 @@
                 },
                 "Gas": {
                     "Chance": 0.0,
-                    "Classname": "Grenade_ChemGas",
+                    "Classname": "Grenade_ChemGas",4
                     "FuseSeconds": 1.0,
                     "FlavorText": "You disturb the cache and a toxic canister pops, releasing choking gas."
                 },
