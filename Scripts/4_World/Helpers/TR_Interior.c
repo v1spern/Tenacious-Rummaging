@@ -10,11 +10,24 @@ class TR_Interior
 	// simple building detection for action gating
 	static bool IsHouseTarget(Object tgt)
 	{
-		if (!tgt) return false;
-		// Hide static/class actions whenever the target is any building/house
-		if (House.Cast(tgt))    return true;
-		if (Building.Cast(tgt)) return true;
-		return false;
+	    if (!tgt) return false;
+
+	    // Only care about real Building/House types
+	    if (!Building.Cast(tgt) && !House.Cast(tgt)) return false;
+
+	    // Exclusions: allow wrecks, boats and other mod types
+	    string t = tgt.GetType();
+	    t.ToLower();
+		if (t.Contains("staticobj"))   return false;
+		if (t.Contains("wreck"))       return false;
+		if (t.Contains("blrd"))        return false;
+		if (t.Contains("expansion"))   return false;
+		if (t.Contains("boat_small"))  return false;
+		if (t.Contains("boatsmall"))   return false;
+		if (t.Contains("lifeboat"))    return false;
+		if (t.Contains("misc"))        return false;
+
+	    return true;
 	}
 
 	static string QuantizeLocalXYZToken(vector localPos)
