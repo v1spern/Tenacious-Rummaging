@@ -10,6 +10,13 @@ class TR_LootEntry
 	int    MinQuantity;
 	int    MaxQuantity;
 
+	// Manual attachments (applied by script)
+	ref array<string> Attachments;
+
+	// Random selection bounds for Attachments (unique picks)
+	int    AttachCountMin;
+	int    AttachCountMax;
+
 	void TR_LootEntry()
 	{
 		type = "";
@@ -19,6 +26,13 @@ class TR_LootEntry
 		MaxHealth = 1.00;
 		MinQuantity = -1;
 		MaxQuantity = -1;
+
+		// Arrays: allocate so JSON omission is harmless
+		Attachments = new array<string>;
+
+		// Default: do not auto-attach anything unless configured
+		AttachCountMin = 0;
+		AttachCountMax = 0;
 	}
 }
 
@@ -59,12 +73,34 @@ class TR_LootGroups
 		foreach (string name, TR_LootGroupDef def : s_File.groups)
 		{
 			if (!def) continue;
+
 			if (def.chance < 0.0) def.chance = 0.0;
 			if (def.chance > 1.0) def.chance = 1.0;
 			if (def.minItems < 0) def.minItems = 0;
 			if (def.maxItems < def.minItems) def.maxItems = def.minItems;
+
 			if (!def.items) def.items = new array<ref TR_LootEntry>;
 			if (!def.cooldownMessage) def.cooldownMessage = new array<string>;
+
+			for (int ii = 0; ii < def.items.Count(); ii++)
+			{
+				TR_LootEntry e = def.items.Get(ii);
+				if (!e) continue;
+
+				// Ensure array exists
+				if (!e.Attachments) e.Attachments = new array<string>;
+
+				// Strip empty strings from attachments
+				for (int k = e.Attachments.Count() - 1; k >= 0; k--)
+				{
+					if (e.Attachments.Get(k) == "") e.Attachments.Remove(k);
+				}
+
+				// Clamp attachment pick bounds
+				if (e.AttachCountMin < 0) e.AttachCountMin = 0;
+				if (e.AttachCountMax < e.AttachCountMin) e.AttachCountMax = e.AttachCountMin;
+				// Do not clamp to list size here; we cap at spawn-time after load/edits.
+			}
 		}
 	}
 
@@ -88,13 +124,16 @@ class TR_LootGroups
 			general.maxItems = 2;
 
 			TR_LootEntry a = new TR_LootEntry;
-			a.type = "Rag"; a.weight = 50; a.MinHealth = 0.70; a.MaxHealth = 1.00; a.MinQuantity = 2; a.MaxQuantity = 6; general.items.Insert(a);
+			a.type = "Rag"; a.weight = 50; a.MinHealth = 0.70; a.MaxHealth = 1.00; a.MinQuantity = 2; a.MaxQuantity = 6;
+			general.items.Insert(a);
 
 			TR_LootEntry b = new TR_LootEntry;
-			b.type = "Matchbox"; b.weight = 25; b.MinHealth = 0.20; b.MaxHealth = 0.80; b.MinQuantity = 1; b.MaxQuantity = 12; general.items.Insert(b);
+			b.type = "Matchbox"; b.weight = 25; b.MinHealth = 0.20; b.MaxHealth = 0.80; b.MinQuantity = 1; b.MaxQuantity = 12;
+			general.items.Insert(b);
 
 			TR_LootEntry c = new TR_LootEntry;
-			c.type = "DuctTape"; c.weight = 25; c.MinHealth = 0.80; c.MaxHealth = 1.00; c.MinQuantity = -1; c.MaxQuantity = -1;  general.items.Insert(c);
+			c.type = "DuctTape"; c.weight = 25; c.MinHealth = 0.80; c.MaxHealth = 1.00; c.MinQuantity = -1; c.MaxQuantity = -1;
+			general.items.Insert(c);
 
 			general.cooldownMessage.Insert("This spot looks like it has been recently searched.");
 			general.cooldownMessage.Insert("Fresh scuff marks - someone beat you to it.");
@@ -107,16 +146,20 @@ class TR_LootGroups
 			misc.maxItems = 3;
 
 			TR_LootEntry m1 = new TR_LootEntry;
-			m1.type = "Paper"; m1.weight = 30; m1.MinHealth = 0.20; m1.MaxHealth = 0.80; m1.MinQuantity = -1; m1.MaxQuantity = -1; misc.items.Insert(m1);
+			m1.type = "Paper"; m1.weight = 30; m1.MinHealth = 0.20; m1.MaxHealth = 0.80; m1.MinQuantity = -1; m1.MaxQuantity = -1;
+			misc.items.Insert(m1);
 
 			TR_LootEntry m2 = new TR_LootEntry;
-			m2.type = "Bone"; m2.weight = 20; m2.MinHealth = 0.15; m2.MaxHealth = 0.80; m2.MinQuantity = 1; m2.MaxQuantity = 3; misc.items.Insert(m2);
+			m2.type = "Bone"; m2.weight = 20; m2.MinHealth = 0.15; m2.MaxHealth = 0.80; m2.MinQuantity = 1; m2.MaxQuantity = 3;
+			misc.items.Insert(m2);
 
 			TR_LootEntry m3 = new TR_LootEntry;
-			m3.type = "Nail"; m3.weight = 20; m3.MinHealth = 0.30; m3.MaxHealth = 1.00; m3.MinQuantity = 5; m3.MaxQuantity = 20; misc.items.Insert(m3);
+			m3.type = "Nail"; m3.weight = 20; m3.MinHealth = 0.30; m3.MaxHealth = 1.00; m3.MinQuantity = 5; m3.MaxQuantity = 20;
+			misc.items.Insert(m3);
 
 			TR_LootEntry m4 = new TR_LootEntry;
-			m4.type = "WaterBottle"; m4.weight = 15; m4.MinHealth = 0.10; m4.MaxHealth = 0.70; m4.MinQuantity = 0; m4.MaxQuantity = 50; misc.items.Insert(m4);
+			m4.type = "WaterBottle"; m4.weight = 15; m4.MinHealth = 0.10; m4.MaxHealth = 0.70; m4.MinQuantity = 0; m4.MaxQuantity = 50;
+			misc.items.Insert(m4);
 
 			misc.cooldownMessage.Insert("Fresh feathers and footprints - this coop was checked moments ago.");
 			misc.cooldownMessage.Insert("Empty scraps and a bent latch. Someone just searched here.");

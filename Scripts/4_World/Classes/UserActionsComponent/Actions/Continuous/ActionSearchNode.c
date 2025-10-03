@@ -45,7 +45,7 @@ class ActionSearchNode : ActionContinuousBase
 		if (!h) h = hPar;
 		if (!h) return false;
 
-		string tok = TR_Interior.ComputeFurnitureToken(player, h); 7 // quantized
+		string tok = TR_Interior.ComputeFurnitureToken(player, h); // quantized
 		if (TR_SearchNodesDb.HasInteriorPieceNear(h, tok, player.GetPosition(), 2.0))
 			return true;
 
@@ -211,7 +211,6 @@ class ActionSearchNode : ActionContinuousBase
 		TR_NodeCooldownSystem.Get().StartCooldown(player, cooldownKey, cooldownTime, globalScope);
 
 		float roll01 = Roll01FromPercent();
-
 		if (roll01 > attemptFrac)
 		{
 			player.MessageStatus("You found nothing.");
@@ -220,7 +219,6 @@ class ActionSearchNode : ActionContinuousBase
 			return;
 		}
 
-		vector basePos = player.GetPosition();
 		int spawnedCount = 0;
 		int toSpawn = Math.RandomIntInclusive(groupDef.minItems, groupDef.maxItems);
 
@@ -231,12 +229,74 @@ class ActionSearchNode : ActionContinuousBase
 
 			float offsetX = Math.RandomFloatInclusive(-0.3, 0.3);
 			float offsetZ = Math.RandomFloatInclusive(-0.3, 0.3);
-			vector pos = Vector(basePos[0] + offsetX, basePos[1], basePos[2] + offsetZ);
 
-			EntityAI item = EntityAI.Cast(GetGame().CreateObjectEx(entry.type, pos, ECE_PLACE_ON_SURFACE));
+			int flags = ECE_PLACE_ON_SURFACE;
+
+			// Spawn at player's current position (avoid parser issues) then scatter
+			EntityAI item = EntityAI.Cast(GetGame().CreateObjectEx(entry.type, player.GetPosition(), flags));
 			if (item)
 			{
+				item.SetPosition(item.GetPosition() + Vector(offsetX, 0, offsetZ));
+
+				// Apply standard overrides (health/quantity)
 				TR_LootRuntime.ApplyOverrides(ItemBase.Cast(item), entry);
+
+				// --- Manual attachments with random count ---
+				int pool = 0;
+				if (entry.Attachments) pool = entry.Attachments.Count();
+
+				if (pool > 0)
+				{
+					int minPick = entry.AttachCountMin;
+					int maxPick = entry.AttachCountMax;
+
+					if (minPick < 0) minPick = 0;
+					if (maxPick < minPick) maxPick = minPick;
+					if (maxPick > pool) maxPick = pool;
+
+					int want = 0;
+					if (maxPick >= minPick) want = Math.RandomIntInclusive(minPick, maxPick);
+
+					if (want > pool) want = pool;
+
+					// Build an index bag 0..pool-1
+					array<int> idx = new array<int>;
+					for (int t = 0; t < pool; t++) idx.Insert(t);
+
+					// Pick 'want' unique attachments by random removing
+					for (int k = 0; k < want; k++)
+					{
+						if (idx.Count() <= 0) break;
+						int pick = Math.RandomInt(0, idx.Count());
+						int atIndex = idx.Get(pick);
+						idx.Remove(pick);
+
+						string attType = entry.Attachments.Get(atIndex);
+						EntityAI att = item.GetInventory().CreateAttachment(attType);
+						if (att)
+							TR_Debug.Log("[ItemSpawnProperties] +Attachment OK item=" + entry.type + " -> " + attType);
+						else
+							TR_Debug.Log("[ItemSpawnProperties] +Attachment FAIL item=" + entry.type + " -> " + attType);
+					}
+				}
+
+				// Log resulting attachments
+				int ac = item.GetInventory().AttachmentCount();
+				if (ac > 0)
+				{
+					array<string> attNames = new array<string>;
+					for (int ai2 = 0; ai2 < ac; ai2++)
+					{
+						EntityAI a2 = item.GetInventory().GetAttachmentFromIndex(ai2);
+						if (a2) attNames.Insert(a2.GetType());
+					}
+					TR_Debug.Log("[ItemSpawnProperties] Attached count=" + ac.ToString() + " on " + entry.type + " -> " + attNames.ToString());
+				}
+				else
+				{
+					TR_Debug.Log("[ItemSpawnProperties] Attached count=0 on " + entry.type);
+				}
+
 				spawnedCount++;
 				TR_PlayerSearchLogger.Get().LogLootEx(player, usedObj, cooldownKey, item, lootCategory, nodeClass, nodeModel);
 			}
@@ -306,7 +366,7 @@ class ActionSearchNode : ActionContinuousBase
 
 	protected void ApplyRandomBleedingWound(PlayerBase player)
 	{
-		ref array<string> sels = new array<string>;
+		array<string> sels = new array<string>;
 		sels.Insert("LeftArm");
 		sels.Insert("RightArm");
 		int idx = Math.RandomInt(0, sels.Count());
