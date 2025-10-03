@@ -191,7 +191,7 @@
 			],
 			"items": [
 				{ "type": "Ruger1022", "weight": 20, "MinHealth": 0.35, "MaxHealth": 0.85, "MinQuantity": -1, "MaxQuantity": -1, "Attachments": [ "Mag_Ruger1022_15Rnd", "SportingOptic" ], "AttachCountMin": 0, "AttachCountMax": 2 },
-				{ "type_range": ["BaseballCap_Red", "BaseballCap_Beige", "BaseballCap_Ping"], "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 }
+				{ "type_range": ["BaseballCap_Red", "BaseballCap_Beige", "BaseballCap_Pink"], "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 }
 			]
 		}
 	}
