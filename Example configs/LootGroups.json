@@ -178,6 +178,21 @@
 				{ "type": "MetalWire", "weight": 10, "MinHealth": 0.20, "MaxHealth": 0.60, "MinQuantity": -1, "MaxQuantity": -1 },
 				{ "type": "WaterBottle", "weight": 15, "MinHealth": 0.10, "MaxHealth": 1.00, "MinQuantity": 1, "MaxQuantity": 50 }
 			]
+		},
+		"advanced_examples": {
+			"chance": 0.50,
+			"minItems": 1,
+			"maxItems": 3,
+  			"cooldownMessage": [
+				"This category is only to showcase the two advanced item spawn manipulator parameters:",
+				"Attachments",
+				"and",
+				"type_range"
+			],
+			"items": [
+				{ "type": "Ruger1022", "weight": 20, "MinHealth": 0.35, "MaxHealth": 0.85, "MinQuantity": -1, "MaxQuantity": -1, "Attachments": [ "Mag_Ruger1022_15Rnd", "SportingOptic" ], "AttachCountMin": 0, "AttachCountMax": 2 },
+				{ "type_range": ["BaseballCap_Red", "BaseballCap_Beige", "BaseballCap_Ping"], "weight": 25, "MinHealth": 0.20, "MaxHealth": 0.35, "MinQuantity": -1, "MaxQuantity": -1 }
+			]
 		}
 	}
 }

@@ -3,36 +3,34 @@
 class TR_LootEntry
 {
 	string type;
+	ref array<string> type_range;
 	int    weight;
 
+	// Spawn overrides
 	float  MinHealth;
 	float  MaxHealth;
 	int    MinQuantity;
 	int    MaxQuantity;
 
-	// Manual attachments (applied by script)
 	ref array<string> Attachments;
 
-	// Random selection bounds for Attachments (unique picks)
 	int    AttachCountMin;
 	int    AttachCountMax;
 
 	void TR_LootEntry()
 	{
-		type = "";
-		weight = 0;
+		weight       = 1;
 
-		MinHealth = 0.00;
-		MaxHealth = 1.00;
-		MinQuantity = -1;
-		MaxQuantity = -1;
+		MinHealth    = -1.0;
+		MaxHealth    = -1.0;
+		MinQuantity  = -1;
+		MaxQuantity  = -1;
 
-		// Arrays: allocate so JSON omission is harmless
-		Attachments = new array<string>;
-
-		// Default: do not auto-attach anything unless configured
+		Attachments  = new array<string>;
 		AttachCountMin = 0;
 		AttachCountMax = 0;
+
+		type_range   = null;
 	}
 }
 
@@ -43,7 +41,6 @@ class TR_LootGroupDef
 	int   maxItems;
 	ref array<ref TR_LootEntry> items;
 
-	// Array of strings; one is chosen at random when cooldown blocks
 	ref array<string> cooldownMessage;
 
 	void TR_LootGroupDef()
@@ -66,7 +63,7 @@ class TR_LootGroups
 {
 	protected static ref TR_LootGroupsFile s_File;
 
-	protected static void _Normalize()
+	protected static void Normalize()
 	{
 		if (!s_File) return;
 
@@ -75,31 +72,46 @@ class TR_LootGroups
 			if (!def) continue;
 
 			if (def.chance < 0.0) def.chance = 0.0;
-			if (def.chance > 1.0) def.chance = 1.0;
+			if (def.chance > 100.0) def.chance = 100.0; // we accept 0..1 or 0..100 at use site
 			if (def.minItems < 0) def.minItems = 0;
 			if (def.maxItems < def.minItems) def.maxItems = def.minItems;
 
 			if (!def.items) def.items = new array<ref TR_LootEntry>;
-			if (!def.cooldownMessage) def.cooldownMessage = new array<string>;
 
-			for (int ii = 0; ii < def.items.Count(); ii++)
+			for (int i = def.items.Count() - 1; i >= 0; i--)
 			{
-				TR_LootEntry e = def.items.Get(ii);
-				if (!e) continue;
+				TR_LootEntry e = def.items.Get(i);
+				if (!e)
+				{
+					def.items.Remove(i);
+					continue;
+				}
 
-				// Ensure array exists
+				bool hasSingle = (e.type != "");
+				bool hasRange  = (e.type_range && e.type_range.Count() > 0);
+				if (!hasSingle && !hasRange)
+				{
+					def.items.Remove(i);
+					continue;
+				}
+
+				if (hasSingle && hasRange)
+				{
+					e.type_range = null;
+				}
+
+				if (e.weight < 0) e.weight = 0;
+
 				if (!e.Attachments) e.Attachments = new array<string>;
 
-				// Strip empty strings from attachments
 				for (int k = e.Attachments.Count() - 1; k >= 0; k--)
 				{
 					if (e.Attachments.Get(k) == "") e.Attachments.Remove(k);
 				}
 
-				// Clamp attachment pick bounds
+				// Attachment pick bounds
 				if (e.AttachCountMin < 0) e.AttachCountMin = 0;
 				if (e.AttachCountMax < e.AttachCountMin) e.AttachCountMax = e.AttachCountMin;
-				// Do not clamp to list size here; we cap at spawn-time after load/edits.
 			}
 		}
 	}
@@ -113,16 +125,19 @@ class TR_LootGroups
 
 		if (FileExist(path))
 		{
+			// Load from disk
 			JsonFileLoader<TR_LootGroupsFile>.JsonLoadFile(path, s_File);
+			Normalize();
+			TR_Debug.Log("LootGroups loaded: " + s_File.groups.Count().ToString() + " group(s) from file.");
+			return;
 		}
-		else
-		{
-			// Seed minimal defaults (ASCII-only content)
-			TR_LootGroupDef general = new TR_LootGroupDef;
-			general.chance   = 0.70;
-			general.minItems = 1;
-			general.maxItems = 2;
 
+		// Create a minimal default file the first time, to help server owners.
+		ref TR_LootGroupsFile defFile = new TR_LootGroupsFile;
+
+		ref TR_LootGroupDef general = new TR_LootGroupDef;
+		{
+			// Simple starter items
 			TR_LootEntry a = new TR_LootEntry;
 			a.type = "Rag"; a.weight = 50; a.MinHealth = 0.70; a.MaxHealth = 1.00; a.MinQuantity = 2; a.MaxQuantity = 6;
 			general.items.Insert(a);
@@ -138,51 +153,19 @@ class TR_LootGroups
 			general.cooldownMessage.Insert("This spot looks like it has been recently searched.");
 			general.cooldownMessage.Insert("Fresh scuff marks - someone beat you to it.");
 			general.cooldownMessage.Insert("Too tidy. Someone picked through here already.");
-			s_File.groups.Set("general", general);
-
-			TR_LootGroupDef misc = new TR_LootGroupDef;
-			misc.chance   = 0.50;
-			misc.minItems = 1;
-			misc.maxItems = 3;
-
-			TR_LootEntry m1 = new TR_LootEntry;
-			m1.type = "Paper"; m1.weight = 30; m1.MinHealth = 0.20; m1.MaxHealth = 0.80; m1.MinQuantity = -1; m1.MaxQuantity = -1;
-			misc.items.Insert(m1);
-
-			TR_LootEntry m2 = new TR_LootEntry;
-			m2.type = "Bone"; m2.weight = 20; m2.MinHealth = 0.15; m2.MaxHealth = 0.80; m2.MinQuantity = 1; m2.MaxQuantity = 3;
-			misc.items.Insert(m2);
-
-			TR_LootEntry m3 = new TR_LootEntry;
-			m3.type = "Nail"; m3.weight = 20; m3.MinHealth = 0.30; m3.MaxHealth = 1.00; m3.MinQuantity = 5; m3.MaxQuantity = 20;
-			misc.items.Insert(m3);
-
-			TR_LootEntry m4 = new TR_LootEntry;
-			m4.type = "WaterBottle"; m4.weight = 15; m4.MinHealth = 0.10; m4.MaxHealth = 0.70; m4.MinQuantity = 0; m4.MaxQuantity = 50;
-			misc.items.Insert(m4);
-
-			misc.cooldownMessage.Insert("Fresh feathers and footprints - this coop was checked moments ago.");
-			misc.cooldownMessage.Insert("Empty scraps and a bent latch. Someone just searched here.");
-			misc.cooldownMessage.Insert("You spot disturbed dust; it's been picked clean.");
-			s_File.groups.Set("misc", misc);
-
-			_Normalize();
-			JsonFileLoader<TR_LootGroupsFile>.JsonSaveFile(path, s_File);
 		}
 
-		_Normalize();
+		defFile.groups.Insert("general", general);
+		s_File = defFile;
 
-		// Debug list
-		array<string> groupNames = new array<string>;
-		foreach (string gname, TR_LootGroupDef def : s_File.groups) groupNames.Insert(gname);
-		groupNames.Sort();
-		TR_Debug.Log("LootGroups loaded with groups: " + groupNames.ToString());
+		Normalize();
+		JsonFileLoader<TR_LootGroupsFile>.JsonSaveFile(path, s_File);
+		TR_Debug.Log("LootGroups default created at: " + path);
 	}
 
-	// Weighted pick for loot entries
 	static TR_LootEntry PickWeighted(ref array<ref TR_LootEntry> entries)
 	{
-		if (!entries || entries.Count() == 0) return null;
+		if (!entries || entries.Count() <= 0) return null;
 
 		int total = 0;
 		for (int i = 0; i < entries.Count(); i++)
@@ -207,37 +190,29 @@ class TR_LootGroups
 		return null;
 	}
 
-	// Alias to avoid breakage with prior references.
 	static TR_LootEntry WeightedPickEntry(ref array<ref TR_LootEntry> entries)
 	{
 		return PickWeighted(entries);
 	}
 
-	// Randomly pick a cooldown message from the group (or empty if none)
 	static string GetCooldownMessage(string name)
 	{
-		TR_LootGroupDef def = Get(name);
-		if (!def) return "";
+		if (!s_File) Load();
 
-		if (!def.cooldownMessage || def.cooldownMessage.Count() == 0) return "";
+		TR_LootGroupDef def = s_File.groups.Get(name);
+		if (!def || !def.cooldownMessage || def.cooldownMessage.Count() == 0)
+			return "";
 
 		int idx = Math.RandomInt(0, def.cooldownMessage.Count());
-		if (idx < 0) idx = 0;
-		if (idx >= def.cooldownMessage.Count()) idx = def.cooldownMessage.Count() - 1;
-
 		return def.cooldownMessage.Get(idx);
 	}
 
 	static TR_LootGroupDef Get(string name)
 	{
 		if (!s_File) Load();
-		TR_LootGroupDef def;
-		if (s_File.groups.Find(name, def)) return def;
-		if (s_File.groups.Find("general", def)) return def; // fallback
-		return null;
+		return s_File.groups.Get(name);
 	}
 
-	// Existing name used internally
 	static array<string> ListNames()
 	{
 		if (!s_File) Load();
@@ -253,4 +228,20 @@ class TR_LootGroups
 	{
 		return ListNames();
 	}
+}
+
+// Resolve a concrete type from a TR_LootEntry ('type' or 'type_range')
+static string TR_ResolveLootType(TR_LootEntry e)
+{
+	if (!e) return "";
+
+	if (e.type != "") return e.type;
+
+	if (e.type_range && e.type_range.Count() > 0)
+	{
+		int idx = Math.RandomInt(0, e.type_range.Count());
+		return e.type_range.Get(idx);
+	}
+
+	return "";
 }

@@ -227,13 +227,22 @@ class ActionSearchNode : ActionContinuousBase
 			TR_LootEntry entry = TR_LootGroups.WeightedPickEntry(groupDef.items);
 			if (!entry) continue;
 
+			// Resolve single 'type' OR 'type_range' variants to a concrete class
+			string __resolvedType = TR_ResolveLootType(entry);
+			if (__resolvedType == "") continue;
+
+			// Simple debug line without external guard (TR_Debug.Log can self-gate)
+			int __rangeCnt = 0;
+			if (entry.type_range) __rangeCnt = entry.type_range.Count();
+			TR_Debug.Log("[ItemSpawnProperties] Spawn type resolved=" + __resolvedType + " (type_range count=" + __rangeCnt.ToString() + ")");
+
 			float offsetX = Math.RandomFloatInclusive(-0.3, 0.3);
 			float offsetZ = Math.RandomFloatInclusive(-0.3, 0.3);
 
 			int flags = ECE_PLACE_ON_SURFACE;
 
-			// Spawn at player's current position (avoid parser issues) then scatter
-			EntityAI item = EntityAI.Cast(GetGame().CreateObjectEx(entry.type, player.GetPosition(), flags));
+			// Spawn at player's current position, then scatter
+			EntityAI item = EntityAI.Cast(GetGame().CreateObjectEx(__resolvedType, player.GetPosition(), flags));
 			if (item)
 			{
 				item.SetPosition(item.GetPosition() + Vector(offsetX, 0, offsetZ));
@@ -241,7 +250,7 @@ class ActionSearchNode : ActionContinuousBase
 				// Apply standard overrides (health/quantity)
 				TR_LootRuntime.ApplyOverrides(ItemBase.Cast(item), entry);
 
-				// --- Manual attachments with random count ---
+				// Manual attachments with random count
 				int pool = 0;
 				if (entry.Attachments) pool = entry.Attachments.Count();
 
@@ -274,9 +283,9 @@ class ActionSearchNode : ActionContinuousBase
 						string attType = entry.Attachments.Get(atIndex);
 						EntityAI att = item.GetInventory().CreateAttachment(attType);
 						if (att)
-							TR_Debug.Log("[ItemSpawnProperties] +Attachment OK item=" + entry.type + " -> " + attType);
+							TR_Debug.Log("[ItemSpawnProperties] +Attachment OK item=" + __resolvedType + " -> " + attType);
 						else
-							TR_Debug.Log("[ItemSpawnProperties] +Attachment FAIL item=" + entry.type + " -> " + attType);
+							TR_Debug.Log("[ItemSpawnProperties] +Attachment FAIL item=" + __resolvedType + " -> " + attType);
 					}
 				}
 
@@ -290,11 +299,11 @@ class ActionSearchNode : ActionContinuousBase
 						EntityAI a2 = item.GetInventory().GetAttachmentFromIndex(ai2);
 						if (a2) attNames.Insert(a2.GetType());
 					}
-					TR_Debug.Log("[ItemSpawnProperties] Attached count=" + ac.ToString() + " on " + entry.type + " -> " + attNames.ToString());
+					TR_Debug.Log("[ItemSpawnProperties] Attached count=" + ac.ToString() + " on " + __resolvedType + " -> " + attNames.ToString());
 				}
 				else
 				{
-					TR_Debug.Log("[ItemSpawnProperties] Attached count=0 on " + entry.type);
+					TR_Debug.Log("[ItemSpawnProperties] Attached count=0 on " + __resolvedType);
 				}
 
 				spawnedCount++;
