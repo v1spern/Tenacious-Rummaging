@@ -66,6 +66,6 @@ I am a novice coder and could not have done this without the help of AI.
 * Shout out to UsuallyAmie, RubixxLOL and Jordan for testing the mod, giving me lots of ideas for features, inputs and general good shit all around. You guys rock!
 
 ###### Also...
-I got a lot of inspiration from other mods and modauthors on Steam, especially the "Search for Loot" mod by HunterZ, and the "DayZStory Loot Wreck System" mod by JOKER and Uncle T. Thank you for all the work you've done. This mod would not have been possible without the previous work of the DayZ modder community.
+I got a lot of inspiration from other mods and modauthors on Steam, especially the "Search for Loot" mod by HunterZ, "Garbage Search" by Zedmag, "Proxy Actions" and "Proxy Framework" by Zenarchist, and the "DayZStory Loot Wreck System" mod by JOKER and Uncle T. Thank you for all the work you've done. This mod would not have been possible without the previous work of the DayZ modder community.
 
 Lastly, a shoutout to the DayZ Modders discord! The best modding resource on the entire interwebs, hands down.
