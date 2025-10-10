@@ -22,7 +22,7 @@ class CfgMods
         name = "Tenacious Rummaging";
         author = "v1sper";
         authorID = "76561197992870768";
-        version = "1.0.3";
+        version = "1.0.4";
         type = "mod";
 
         dependencies[] = {"Game","World","Mission"};
@@ -69,6 +69,15 @@ class CfgVehicles
         descriptionShort = "A mystical stone that grants administrative powers to add nodes to the rummaging-system in Tenacious Rummaging";
         model = "\dz\gear\consumables\Stone.p3d";
         weight = 100;
+        itemSize[] = {1,1};
+    };
+    class AdminPebble: Inventory_Base
+    {
+        scope = 2;
+        displayName = "Admin Pebble";
+        descriptionShort = "An administrative placement tool for adding virtual interior rummage nodes in Tenacious Rummaging";
+        model = "\dz\gear\consumables\SmallStone.p3d";
+        weight = 50;
         itemSize[] = {1,1};
     };
 

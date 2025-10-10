@@ -14,6 +14,7 @@ modded class ActionConstructor
         actions.Insert(ActionAddClassSearchNode);
 
         actions.Insert(ActionAddInteriorPieceSearchNode);
+        actions.Insert(ActionAddVirtualSearchNode);
 
 
         TR_Debug.Log("[ActionConstructor] All Tenacious Rummaging actions registered.");

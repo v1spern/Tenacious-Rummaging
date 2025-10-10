@@ -1,0 +1,3 @@
+class AdminPebble extends ItemBase
+{
+}
