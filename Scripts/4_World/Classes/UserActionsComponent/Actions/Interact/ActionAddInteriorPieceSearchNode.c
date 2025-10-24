@@ -50,6 +50,6 @@ class ActionAddInteriorPieceSearchNode : ActionInteractBase
 		// Persist under building parent; default group "general"
 		string msg = TR_Interior.AdminAddFromCursor(pb, action_data.m_Target, "general");
 		if (msg == "") msg = "[AddInterior] Failed to add interior token.";
-		pb.MessageStatus(msg);
+		TR_Notify.Send(msg);
 	}
 }

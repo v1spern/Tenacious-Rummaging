@@ -4,7 +4,7 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 {
     void TR_ActionAddVirtualSearchNode()
     {
-        TR_Debug.Log("[TR] TR_ActionAddVirtualSearchNode LOADED (namespaced, parent-aware=True)");
+        TR_Debug.Log("[Virtual Node Add] TR_ActionAddVirtualSearchNode LOADED (namespaced, parent-aware=True)");
 
         m_Text       = "Add virtual interior node";
         m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
@@ -37,7 +37,7 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
         Building b = ResolveBuildingFromTargetOrNear(pb, action_data.m_Target, 6.0);
         if (!b)
         {
-            pb.MessageStatus("[AddVirtual] No valid building found nearby.");
+            TR_Notify.Send("[Virtual Node Add] No valid building found nearby.");
             return;
         }
 
@@ -48,8 +48,8 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 
         TR_SearchNodesDb.AddInteriorPieceNode(buildingKey, token, "general", "virtual");
 
-        pb.MessageStatus("[AddVirtual] Added: " + buildingKey + " @ " + token + " [virtual]");
-        TR_Debug.Log("ADD-VIRTUAL -> class=" + buildingKey + " @" + token + " label=virtual");
+        TR_Notify.Send("[Virtual Node Add] Added: " + buildingKey + " @ " + token + " [virtual]");
+        TR_Debug.Log("[AddVirtualNode] Adding -> class=" + buildingKey + " @" + token + " label=virtual");
     }
 
     protected Building ResolveBuildingFromTargetOrNear(PlayerBase player, ActionTarget target, float radius)
