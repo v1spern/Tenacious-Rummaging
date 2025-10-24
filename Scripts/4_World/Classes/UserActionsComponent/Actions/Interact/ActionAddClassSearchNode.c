@@ -78,7 +78,7 @@ class ActionAddClassSearchNode : ActionInteractBase
         Object obj = action_data.m_Target.GetObject();
         if (!obj)
         {
-            player.MessageStatus("No target found.");
+            TR_Notify.Send(player, "No target found.");
             TR_Debug.Warn("ADD-CLASSWIDE failed: ActionTarget.GetObject() returned null");
             return;
         }
@@ -93,7 +93,7 @@ class ActionAddClassSearchNode : ActionInteractBase
         }
         if (!hasAdminStone)
         {
-            player.MessageStatus("You must hold the Admin Stone to add nodes.");
+            TR_Notify.Send(player, "You must hold the Admin Stone to add nodes.");
             TR_Debug.Warn("ADD-CLASSWIDE failed: missing Admin Stone in hands");
             return;
         }
@@ -116,7 +116,7 @@ class ActionAddClassSearchNode : ActionInteractBase
         if (modelName == "") unsupported = true;
         if (unsupported)
         {
-            player.MessageStatus("Target not supported for class-wide add.");
+            TR_Notify.Send(player, "Target not supported for class-wide add.");
             TR_Debug.Warn("ADD-CLASSWIDE aborted: unsupported target (class or model missing). Obj=" + obj.ToString());
             return;
         }
@@ -124,7 +124,7 @@ class ActionAddClassSearchNode : ActionInteractBase
         // Duplicate guard: class-wide uniqueness is (class + model)
         if (TR_SearchNodesDb.ExistsClassWideNode(className, modelName))
         {
-            player.MessageStatus("Duplicate: class-wide node already exists for " + className + ".");
+            TR_Notify.Send(player, "Duplicate: class-wide node already exists for " + className + ".");
             TR_Debug.Log("ADD-CLASSWIDE DUPLICATE -> class=" + className + " model=" + modelName);
             return;
         }
@@ -138,7 +138,7 @@ class ActionAddClassSearchNode : ActionInteractBase
         string msg = "Added class-wide: " + className;
         if (modelName != "") msg += " (model: " + modelName + ")";
         if (defGroup != "") msg += " [" + defGroup + "]";
-        player.MessageStatus(msg);
+        TR_Notify.Send(player, msg);
 
         TR_Debug.Log("ADD-CLASSWIDE OK -> class=" + className + " model=" + modelName + " group=" + defGroup);
     }

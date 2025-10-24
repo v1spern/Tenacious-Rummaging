@@ -27,8 +27,6 @@ modded class PlayerBase extends ManBase
         AddAction(ActionAddClassSearchNode, InputActionMap);
         AddAction(ActionAddStaticSearchNode, InputActionMap);
         AddAction(ActionAddInteriorPieceSearchNode, InputActionMap);
-        AddAction(ActionAddVirtualSearchNode, InputActionMap);
-        
     }
 
     override void MessageAction(string text)

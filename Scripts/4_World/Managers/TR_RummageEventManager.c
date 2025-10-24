@@ -471,7 +471,7 @@ class TR_RummageEventManager
 
         if (player && cfg.FlavorText != "")
         {
-            player.MessageStatus(cfg.FlavorText);
+            TR_Notify.Send(player, cfg.FlavorText);
         }
 
         TR_Debug.Log("[RummageEvent] TRIGGER ZombieSpawn count=" + spawned.ToString() + " radius=" + cfg.SpawnRadius.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(pos));
@@ -496,7 +496,7 @@ class TR_RummageEventManager
                 gb.Unpin();
                 if (player && cfg.FlavorText != "")
                 {
-                    player.MessageStatus(cfg.FlavorText);
+                    TR_Notify.Send(player, cfg.FlavorText);
                 }
                 TR_Debug.Log("[RummageEvent] TRIGGER Smoke class=" + cfg.Classname + " fuse_s=" + cfg.FuseSeconds.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(sp));
             }
@@ -523,7 +523,7 @@ class TR_RummageEventManager
             eai.SetHealth("", "", 0.0);
             if (player && cfg.FlavorText != "")
             {
-                player.MessageStatus(cfg.FlavorText);
+                TR_Notify.Send(player, cfg.FlavorText);
             }
             TR_Debug.Log("[RummageEvent] TRIGGER Gas(RUIN) class=" + cfg.Classname + " fuse_s=" + cfg.FuseSeconds.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(sp));
         }
@@ -549,7 +549,7 @@ class TR_RummageEventManager
 
         if (cfg.FlavorText != "")
         {
-            player.MessageStatus(cfg.FlavorText);
+            TR_Notify.Send(player, cfg.FlavorText);
         }
 
         float hpDmg = cfg.HealthDamage;
@@ -593,7 +593,7 @@ class TR_RummageEventManager
 
         if (cfg.FlavorText != "")
         {
-            player.MessageStatus(cfg.FlavorText);
+            TR_Notify.Send(player, cfg.FlavorText);
         }
 
         TR_Debug.Log("[RummageEvent] TRIGGER Shock player=" + GetPlayerNameSafe(player) + " shock=" + shockAmt.ToString() + " hp_dmg=" + hpDmg.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(player.GetPosition()));
@@ -612,7 +612,7 @@ class TR_RummageEventManager
 
         if (player && cfg.FlavorText != "")
         {
-            player.MessageStatus(cfg.FlavorText);
+            TR_Notify.Send(player, cfg.FlavorText);
         }
 
         TR_Debug.Log("[RummageEvent] TRIGGER SirenAlarm chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(soundPos));

@@ -1,0 +1,356 @@
+// Loot Settings Manager
+
+static const string TR_FLAVOR_UNSET = "#__TR_UNSET__#";
+
+class TR_LSM_Notifications
+{
+    bool   Enabled = true;
+    float  DurationSeconds = 5.0;
+    int    EnableToastIcon = 1;
+}
+
+class TR_LSM_ZombieSpawnEvent
+{
+    float Chance = 0.0;
+    int   CountMin = 1;
+    int   CountMax = 1;
+    float SpawnRadius = 8.0;
+    ref array<string> ZombieTypes;
+
+    float AlertNoiseStrength = 50.0;
+    float AlertNoiseRange = 30.0;
+
+    string FlavorText;
+
+    void TR_LSM_ZombieSpawnEvent()
+    {
+        ZombieTypes = new array<string>();
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_SmokeEvent
+{
+    float Chance = 0.0;
+    string Classname = "M18SmokeGrenade_Red";
+    float FuseSeconds = 1.0;
+    string FlavorText;
+
+    void TR_LSM_SmokeEvent()
+    {
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_GasEvent
+{
+    float Chance = 0.0;
+    string Classname = "Grenade_ChemGas";
+    float FuseSeconds = 1.0;
+    string FlavorText;
+
+    void TR_LSM_GasEvent()
+    {
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_KnockOutEvent
+{
+    float Chance = 0.0;
+    float DurationSeconds = 10.0;
+    float HealthDamage = 25.0;
+    string FlavorText;
+
+    void TR_LSM_KnockOutEvent()
+    {
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_ShockEvent
+{
+    float Chance = 0.0;
+    float ShockAmount = 80.0;
+    float HealthDamage = 25.0;
+    string FlavorText;
+
+    void TR_LSM_ShockEvent()
+    {
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_SirenAlarmEvent
+{
+    float Chance = 0.0;
+    string FlavorText;
+
+    void TR_LSM_SirenAlarmEvent()
+    {
+        FlavorText = TR_FLAVOR_UNSET;
+    }
+}
+
+class TR_LSM_Events
+{
+    ref TR_LSM_ZombieSpawnEvent ZombieSpawn;
+    ref TR_LSM_SmokeEvent       Smoke;
+    ref TR_LSM_GasEvent         Gas;
+    ref TR_LSM_KnockOutEvent    KnockOut;
+    ref TR_LSM_ShockEvent       Shock;
+    ref TR_LSM_SirenAlarmEvent  SirenAlarm;
+
+    void TR_LSM_Events()
+    {
+        ZombieSpawn = new TR_LSM_ZombieSpawnEvent();
+        Smoke       = new TR_LSM_SmokeEvent();
+        Gas         = new TR_LSM_GasEvent();
+        KnockOut    = new TR_LSM_KnockOutEvent();
+        Shock       = new TR_LSM_ShockEvent();
+        SirenAlarm  = new TR_LSM_SirenAlarmEvent();
+    }
+}
+
+class TR_CategorySettings
+{
+    float CooldownTime = 1800;
+    float HazardChance = 0.0;
+
+    int GloveDamageMin = 5;
+    int GloveDamageMax = 15;
+
+    ref TR_LSM_Events Events;
+}
+
+class TR_LootSettingsData
+{
+    ref map<string, ref TR_CategorySettings> Categories;
+
+    float  DefaultCooldownTime = 1800;
+    string CooldownScope = "Global";
+    string DefaultGroup = "";
+
+    bool DebugMode = false;
+    bool EnableCsvLogging = false;
+
+    ref TR_LSM_Notifications Notifications;
+
+    void TR_LootSettingsData()
+    {
+        Categories    = new map<string, ref TR_CategorySettings>();
+        Notifications = new TR_LSM_Notifications();
+    }
+}
+
+class TR_LootSettingsManager
+{
+    static private ref TR_LootSettingsData s_Data;
+
+    static void EnsureLoaded()
+    {
+        if (!s_Data)
+            Load();
+    }
+
+    static float NotifDurationSeconds()
+    {
+        EnsureLoaded();
+        if (!s_Data || !s_Data.Notifications) return 5.0;
+        float v = s_Data.Notifications.DurationSeconds;
+        if (v < 0.5) v = 0.5;
+        if (v > 15.0) v = 15.0;
+        return v;
+    }
+
+    static bool EnableToastIcon()
+    {
+        EnsureLoaded();
+        if (!s_Data || !s_Data.Notifications) return true;
+        return s_Data.Notifications.EnableToastIcon != 0;
+    }
+
+    static bool NotifEnabled()
+    {
+        EnsureLoaded();
+        if (!s_Data || !s_Data.Notifications) return true;
+        return s_Data.Notifications.Enabled;
+    }
+
+    static void Load()
+    {
+        s_Data = new TR_LootSettingsData();
+        string path = TR_Constants.Path("LootSettings.json");
+
+        if (FileExist(path))
+        {
+            JsonFileLoader<TR_LootSettingsData>.JsonLoadFile(path, s_Data);
+            EnsureNotificationsBackfilled();
+            if (s_Data && s_Data.Categories)
+            {
+                foreach (string k, TR_CategorySettings cs : s_Data.Categories)
+                {
+                    if (!cs.Events)
+                    {
+                        cs.Events = CreateDefaultEvents();
+                    }
+
+                    if (cs.CooldownTime <= 0) cs.CooldownTime = s_Data.DefaultCooldownTime;
+                    if (cs.GloveDamageMin < 0) cs.GloveDamageMin = 0;
+                    if (cs.GloveDamageMax < cs.GloveDamageMin) cs.GloveDamageMax = cs.GloveDamageMin;
+                    if (cs.HazardChance < 0.0) cs.HazardChance = 0.0;
+                    if (cs.HazardChance > 1.0) cs.HazardChance = 1.0;
+                }
+            }
+        }
+        else
+        {
+            SaveManual(s_Data);
+        }
+    }
+
+    static void SaveManual(TR_LootSettingsData data)
+    {
+        string path = TR_Constants.Path("LootSettings.json");
+
+        if (!data.Categories || data.Categories.Count() == 0)
+        {
+            data.Categories = new map<string, ref TR_CategorySettings>();
+
+            TR_CategorySettings gen = new TR_CategorySettings();
+            gen.CooldownTime = 1800;
+            gen.GloveDamageMin = 5;
+            gen.GloveDamageMax = 15;
+            gen.Events = CreateDefaultEvents();
+            data.Categories.Set("general", gen);
+
+            data.DefaultCooldownTime = 1800;
+            data.CooldownScope = "Global";
+            data.DefaultGroup  = "general";
+            data.DebugMode = false;
+            data.EnableCsvLogging = false;
+        }
+
+        if (!data.Notifications)
+        {
+            data.Notifications = new TR_LSM_Notifications();
+        }
+
+        JsonFileLoader<TR_LootSettingsData>.JsonSaveFile(path, data);
+    }
+
+    static TR_LSM_Events CreateDefaultEvents()
+    {
+        TR_LSM_Events ev = new TR_LSM_Events();
+
+        ev.ZombieSpawn.Chance = 0.0;
+        ev.ZombieSpawn.CountMin = 1;
+        ev.ZombieSpawn.CountMax = 2;
+        ev.ZombieSpawn.SpawnRadius = 12.0;
+        ev.ZombieSpawn.AlertNoiseStrength = 50.0;
+        ev.ZombieSpawn.AlertNoiseRange = 30.0;
+        ev.ZombieSpawn.FlavorText = "Your rummaging makes too much noise; nearby Infected are alerted and start hunting you.";
+
+        ev.Smoke.Chance = 0.0;
+        ev.Smoke.Classname = "M18SmokeGrenade_Red";
+        ev.Smoke.FuseSeconds = 1.0;
+        ev.Smoke.FlavorText = "You jostle the stash; a smoke grenade pops.";
+
+        ev.Gas.Chance = 0.0;
+        ev.Gas.Classname = "Grenade_ChemGas";
+        ev.Gas.FuseSeconds = 1.0;
+        ev.Gas.FlavorText = "A toxic canister vents gas.";
+
+        ev.KnockOut.Chance = 0.0;
+        ev.KnockOut.DurationSeconds = 12.0;
+        ev.KnockOut.HealthDamage = 25.0;
+        ev.KnockOut.FlavorText = "A nasty hit knocks you out.";
+
+        ev.Shock.Chance = 0.0;
+        ev.Shock.ShockAmount = 50.0;
+        ev.Shock.HealthDamage = 25.0;
+        ev.Shock.FlavorText = "A jolt of electricity hurts.";
+
+        ev.SirenAlarm.Chance = 0.0;
+        ev.SirenAlarm.FlavorText = "A siren blares in the distance.";
+
+        return ev;
+    }
+
+    static void EnsureNotificationsBackfilled()
+    {
+        if (!s_Data) return;
+        if (!s_Data.Notifications)
+        {
+            s_Data.Notifications = new TR_LSM_Notifications();
+        }
+    }
+
+    static float GetCooldownForCategory(string groupName)
+    {
+        if (!s_Data) return 60;
+        if (s_Data.Categories && s_Data.Categories.Contains(groupName))
+        {
+            return s_Data.Categories.Get(groupName).CooldownTime;
+        }
+        return s_Data.DefaultCooldownTime;
+    }
+
+    static bool IsCooldownGlobal()
+    {
+        if (!s_Data) return true;
+        return s_Data.CooldownScope == "Global";
+    }
+
+    static string GetDefaultGroup()
+    {
+        if (!s_Data) return "";
+        return s_Data.DefaultGroup;
+    }
+
+    static bool IsDebugEnabled()
+    {
+        if (!s_Data) return false;
+        return s_Data.DebugMode;
+    }
+
+    static bool IsCsvLoggingEnabled()
+    {
+        if (!s_Data) return false;
+        return s_Data.EnableCsvLogging;
+    }
+
+    static float GetHazardChanceForCategory(string groupName)
+    {
+        if (!s_Data) return 0.0;
+        if (s_Data.Categories && s_Data.Categories.Contains(groupName))
+        {
+            float c = s_Data.Categories.Get(groupName).HazardChance;
+            if (c < 0.0) return 0.0;
+            if (c > 1.0) return 1.0;
+            return c;
+        }
+        return 0.0;
+    }
+
+    static int GetRandomGloveDamageForCategory(string groupName)
+    {
+        int dmin = 5;
+        int dmax = 15;
+
+        if (s_Data && s_Data.Categories && s_Data.Categories.Contains(groupName))
+        {
+            TR_CategorySettings cs = s_Data.Categories.Get(groupName);
+            dmin = cs.GloveDamageMin;
+            dmax = cs.GloveDamageMax;
+        }
+
+        if (dmin < 0) dmin = 0;
+        if (dmax < dmin) dmax = dmin;
+
+        int span = dmax - dmin + 1;
+        if (span <= 0) return dmin;
+
+        return dmin + Math.RandomInt(0, span);
+    }
+}

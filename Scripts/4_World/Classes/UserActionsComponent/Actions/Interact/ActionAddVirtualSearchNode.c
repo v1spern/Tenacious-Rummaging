@@ -1,11 +1,11 @@
 // Add Virtual Interior Search Node (AdminPebble)
-// Bound to F via AddAction(ActionAddVirtualSearchNode, InputActionMap)
-// Targeting: prefer cursor hit → building ancestor; else nearest building within 6 m
-// Token: player world pos transformed into building local grid
-class ActionAddVirtualSearchNode : ActionInteractBase
+
+class TR_ActionAddVirtualSearchNode : ActionInteractBase
 {
-    void ActionAddVirtualSearchNode()
+    void TR_ActionAddVirtualSearchNode()
     {
+        TR_Debug.Log("[TR] TR_ActionAddVirtualSearchNode LOADED (namespaced, parent-aware=True)");
+
         m_Text       = "Add virtual interior node";
         m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
         m_StanceMask = DayZPlayerConstants.STANCEMASK_ALL;
@@ -14,7 +14,7 @@ class ActionAddVirtualSearchNode : ActionInteractBase
     override void CreateConditionComponents()
     {
         // Get a real cursor hit when possible (proxies or mesh); if no hit, we still allow via proximity fallback.
-        m_ConditionTarget = new CCTCursor;
+        m_ConditionTarget = new CCTCursorParent;
         m_ConditionItem   = new CCINone;
     }
 
@@ -22,7 +22,7 @@ class ActionAddVirtualSearchNode : ActionInteractBase
     {
         if (!player) return false;
 
-        ItemBase inHands = ItemBase.Cast(player.GetItemInHands());
+        ItemBase inHands; if (!Class.CastTo(inHands, player.GetItemInHands())) inHands = null;
         if (!inHands || !inHands.IsKindOf("AdminPebble")) return false;
 
         Building b = ResolveBuildingFromTargetOrNear(player, target, 6.0);
@@ -31,7 +31,7 @@ class ActionAddVirtualSearchNode : ActionInteractBase
 
     override void OnExecuteServer(ActionData action_data)
     {
-        PlayerBase pb = PlayerBase.Cast(action_data.m_Player);
+        PlayerBase pb; if (!Class.CastTo(pb, action_data.m_Player)) return;
         if (!pb) return;
 
         Building b = ResolveBuildingFromTargetOrNear(pb, action_data.m_Target, 6.0);
@@ -41,14 +41,11 @@ class ActionAddVirtualSearchNode : ActionInteractBase
             return;
         }
 
-        // INLINE (v1.0.3 compatible): lower-cased classname
         string buildingKey = b.GetType();
         buildingKey.ToLower();
 
-        // Quantized token from player's position in building local space
         string token = TR_Interior.ServerComputeFurnitureToken(pb, b);
 
-        // Persist to SearchableNodes.json
         TR_SearchNodesDb.AddInteriorPieceNode(buildingKey, token, "general", "virtual");
 
         pb.MessageStatus("[AddVirtual] Added: " + buildingKey + " @ " + token + " [virtual]");
@@ -78,8 +75,7 @@ class ActionAddVirtualSearchNode : ActionInteractBase
         int hops = 0;
         while (cur && hops < 32)
         {
-            Building b = Building.Cast(cur);
-            if (b) return b;
+            Building b; if (Class.CastTo(b, cur)) return b;
             cur = cur.GetParent();
             hops++;
         }
@@ -107,13 +103,7 @@ class ActionAddVirtualSearchNode : ActionInteractBase
             Object o = objs.Get(i);
             if (!o) continue;
 
-            Building b = Building.Cast(o);
-            if (!b)
-            {
-                House h = House.Cast(o);
-                if (h) b = Building.Cast(o);
-            }
-            if (!b) continue;
+            Building b; if (!Class.CastTo(b, o)) continue;
 
             float ox = o.GetPosition()[0];
             float oy = o.GetPosition()[1];

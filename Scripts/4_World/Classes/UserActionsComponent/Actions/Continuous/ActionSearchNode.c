@@ -194,7 +194,7 @@ class ActionSearchNode : ActionContinuousBase
 			int remainingSec = TR_NodeCooldownSystem.Get().Remaining(player, cooldownKey, cooldownTime, globalScope);
 			string cdMsg = TR_LootGroups.GetCooldownMessage(lootCategory);
 			if (cdMsg == "") cdMsg = "This spot looks like it has been recently searched.";
-			player.MessageStatus(cdMsg);
+			TR_Notify.Send(player, cdMsg);
 			TR_PlayerSearchLogger.Get().LogCooldownBlockedEx(player, usedObj, cooldownKey, remainingSec, lootCategory, nodeClass, nodeModel);
 			return;
 		}
@@ -213,7 +213,7 @@ class ActionSearchNode : ActionContinuousBase
 		float roll01 = Roll01FromPercent();
 		if (roll01 > attemptFrac)
 		{
-			player.MessageStatus("You found nothing.");
+			TR_Notify.Send(player, "You found nothing.");
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
 			return;
@@ -313,13 +313,13 @@ class ActionSearchNode : ActionContinuousBase
 
 		if (spawnedCount == 0)
 		{
-			player.MessageStatus("You found nothing.");
+			TR_Notify.Send(player, "You found nothing.");
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
 		}
 		else
 		{
-			player.MessageStatus("You find some stuff and put it beside you on the ground. (Items: " + spawnedCount.ToString() + ")");
+			TR_Notify.Send(player, "You find some stuff and put it beside you on the ground. (Items: " + spawnedCount.ToString() + ")");
 			PlayLootFoundClientOrRPC(player);
 			TryApplySearchHazard(player, lootCategory);
 		}
@@ -344,17 +344,17 @@ class ActionSearchNode : ActionContinuousBase
 				if (dmg > 0)
 				{
 					gloves.AddHealth("", "", -dmg);
-					player.MessageStatus("Your hands get scraped but your gloves take the hit.");
+					TR_Notify.Send(player, "Your hands get scraped but your gloves take the hit.");
 				}
 				return;
 			}
 			ApplyRandomBleedingWound(player);
-			player.MessageStatus("Your ruined gloves fail to protect you. You cut yourself while rummaging!");
+			TR_Notify.Send(player, "Your ruined gloves fail to protect you. You cut yourself while rummaging!");
 			return;
 		}
 
 		ApplyRandomBleedingWound(player);
-		player.MessageStatus("You cut yourself while rummaging!");
+		TR_Notify.Send(player, "You cut yourself while rummaging!");
 	}
 
 	protected ItemBase GetPlayerGloves(PlayerBase player)

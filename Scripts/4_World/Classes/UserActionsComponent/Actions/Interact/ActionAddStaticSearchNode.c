@@ -79,7 +79,7 @@ class ActionAddStaticSearchNode : ActionInteractBase
         Object obj = action_data.m_Target.GetObject();
         if (!obj)
         {
-            player.MessageStatus("No target found.");
+            TR_Notify.Send(player, "No target found.");
             TR_Debug.Warn("ADD-STATIC failed: ActionTarget.GetObject() returned null");
             return;
         }
@@ -94,7 +94,7 @@ class ActionAddStaticSearchNode : ActionInteractBase
         }
         if (!hasAdminStone)
         {
-            player.MessageStatus("You must hold the Admin Stone to add nodes.");
+            TR_Notify.Send(player, "You must hold the Admin Stone to add nodes.");
             TR_Debug.Warn("ADD-STATIC failed: missing Admin Stone in hands");
             return;
         }
@@ -118,7 +118,7 @@ class ActionAddStaticSearchNode : ActionInteractBase
         if (modelName == "") unsupported = true;
         if (unsupported)
         {
-            player.MessageStatus("Target not supported for static add.");
+            TR_Notify.Send(player, "Target not supported for static add.");
             TR_Debug.Warn("ADD-STATIC aborted: unsupported target (class or model missing). Obj=" + obj.ToString());
             return;
         }
@@ -133,7 +133,7 @@ class ActionAddStaticSearchNode : ActionInteractBase
         if (modelName != "") msg += " (model: " + modelName + ")";
         msg += " @" + pos.ToString();
         if (defGroup != "") msg += " [" + defGroup + "]";
-        player.MessageStatus(msg);
+        TR_Notify.Send(player, msg);
 
         TR_Debug.Log("ADD-STATIC -> class=" + className + " model=" + modelName + " @ " + pos.ToString() + " group=" + defGroup);
     }
