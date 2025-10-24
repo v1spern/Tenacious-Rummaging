@@ -163,7 +163,7 @@ class TR_LootGroups
 		TR_Debug.Log("LootGroups default created at: " + path);
 	}
 
-	static TR_LootEntry PickWeighted(ref array<ref TR_LootEntry> entries)
+	static TR_LootEntry PickWeighted(array<ref TR_LootEntry> entries)
 	{
 		if (!entries || entries.Count() <= 0) return null;
 
@@ -190,7 +190,7 @@ class TR_LootGroups
 		return null;
 	}
 
-	static TR_LootEntry WeightedPickEntry(ref array<ref TR_LootEntry> entries)
+	static TR_LootEntry WeightedPickEntry(array<ref TR_LootEntry> entries)
 	{
 		return PickWeighted(entries);
 	}

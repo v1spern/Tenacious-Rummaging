@@ -29,8 +29,8 @@ class TR_Interior
 
 		while (cur && hops < MAX_HOPS)
 		{
-			Building b = Building.Cast(cur);
-			if (b) return b;
+			Building b;
+			if (Class.CastTo(b, cur)) return b;
 			cur = cur.GetParent();
 			hops++;
 		}
@@ -157,17 +157,18 @@ class TR_Interior
 		return ComputeFurnitureToken(player, b);
 	}
 
-	// Search UX (unchanged; used by looting/search path)
+	// Search UX
 	static bool IsHouseTarget(Object tgt)
 	{
-	    if (!tgt) return false;
+		if (!tgt) return false;
 
-	    // Only care about real Building/House types
-	    if (!Building.Cast(tgt) && !House.Cast(tgt)) return false;
+		Building asB; House asH;
+		bool isB = Class.CastTo(asB, tgt);
+		bool isH = Class.CastTo(asH, tgt);
+		if (!isB && !isH) return false;
 
-	    // Exclusions: allow wrecks, boats and other mod types
-	    string t = tgt.GetType();
-	    t.ToLower();
+		string t = tgt.GetType();
+		t.ToLower();
 		if (t.Contains("staticobj"))   return false;
 		if (t.Contains("wreck"))       return false;
 		if (t.Contains("blrd"))        return false;
@@ -177,7 +178,7 @@ class TR_Interior
 		if (t.Contains("lifeboat"))    return false;
 		if (t.Contains("misc"))        return false;
 
-	    return true;
+		return true;
 	}
 
 	static string GetHouseClassLower(House h)
@@ -191,23 +192,22 @@ class TR_Interior
 	static bool ClientCanPrompt(PlayerBase player, Object candidate)
 	{
 		if (!player || !candidate) return false;
-
-		Building b = Building.Cast(candidate);
-		if (!b) return false;
-
+	
+		Building b;
+		if (!Class.CastTo(b, candidate)) return false;
+	
 		string hLow = b.GetType();
 		hLow.ToLower();
 		if (!TR_SearchNodesDb.HasInteriorForHouse(hLow)) return false;
-
-		// distance check (squared, <= 8 m) — avoid vector locals
+	
 		float dx = player.GetPosition()[0] - b.GetPosition()[0];
 		float dy = player.GetPosition()[1] - b.GetPosition()[1];
 		float dz = player.GetPosition()[2] - b.GetPosition()[2];
 		float d2 = dx*dx + dy*dy + dz*dz;
-		if (d2 > 64.0) return false; // 8 m
+		if (d2 > 64.0) return false;
 		return true;
 	}
-
+	
 	static string BuildInteriorCooldownKey(House h, string furnitureLocalToken)
 	{
 		string hLow = GetHouseClassLower(h);

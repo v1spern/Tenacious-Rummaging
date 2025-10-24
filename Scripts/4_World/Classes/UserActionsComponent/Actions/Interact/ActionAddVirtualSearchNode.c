@@ -70,18 +70,19 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 
     protected Building FindBuildingAncestor(Object start)
     {
-        if (!start) return null;
-        Object cur = start;
-        int hops = 0;
-        while (cur && hops < 32)
-        {
-            Building b; if (Class.CastTo(b, cur)) return b;
-            cur = cur.GetParent();
-            hops++;
-        }
-        return null;
+    	if (!start) return null;
+    	Object cur = start;
+    	int hops = 0;
+    	while (cur && hops < 32)
+    	{
+    		Building b;
+    		if (Class.CastTo(b, cur)) return b;
+    		cur = cur.GetParent();
+    		hops++;
+    	}
+    	return null;
     }
-
+    
     protected Building FindNearestBuildingWithin(PlayerBase player, float radius)
     {
         if (!player) return null;
