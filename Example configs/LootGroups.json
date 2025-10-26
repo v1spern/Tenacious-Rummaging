@@ -2,6 +2,7 @@
 	"groups": {
 		"kitchen_cabinets": {
 			"chance": 0.10,
+            "promptText": "Rummage in the kitchen cabinets",
 			"minItems": 1,
 			"maxItems": 2,
       		"cooldownMessage": [
@@ -36,6 +37,7 @@
 		},
 		"kitchen_fridge": {
 			"chance": 0.10,
+            "promptText": "Look in the fridge for a snack",
 			"minItems": 1,
 			"maxItems": 1,
       		"cooldownMessage": [
@@ -63,6 +65,7 @@
 		},
 		"kitchen_cleaning_supplies": {
 			"chance": 0.10,
+            "promptText": "",
 			"minItems": 1,
 			"maxItems": 1,
       		"cooldownMessage": [
@@ -80,6 +83,7 @@
 		},
 		"kitchen_pantry_shelves": {
 			"chance": 0.10,
+            "promptText": "Search the pantry shelf",
 			"minItems": 1,
 			"maxItems": 1,
 		    "cooldownMessage": [
@@ -97,6 +101,7 @@
 		},
 		"garbage": {
 			"chance": 0.25,
+            "promptText": "",
 			"minItems": 1,
 			"maxItems": 2,
   			"cooldownMessage": [
@@ -150,6 +155,7 @@
 		},
 		"general": {
 			"chance": 0.70,
+            "promptText": "",
 			"minItems": 1,
 			"maxItems": 2,
   			"cooldownMessage": [
@@ -165,6 +171,7 @@
 		},
 		"misc": {
 			"chance": 0.50,
+            "promptText": "",
 			"minItems": 1,
 			"maxItems": 3,
   			"cooldownMessage": [
@@ -181,6 +188,7 @@
 		},
 		"advanced_examples": {
 			"chance": 0.50,
+            "promptText": "",
 			"minItems": 1,
 			"maxItems": 3,
   			"cooldownMessage": [

@@ -96,6 +96,12 @@
     "DefaultCooldownTime": 1800.0,
     "CooldownScope": "Global",
     "DefaultGroup": "general",
+	"DefaultPromptText": "Rummage here for loot",
     "DebugMode": 1,
-    "EnableCsvLogging": 1
+    "EnableCsvLogging": 1,
+	"Notifications": {
+        "Enabled": 1,
+        "DurationSeconds": 5.0,
+        "EnableToastIcon": 1
+    }
 }
