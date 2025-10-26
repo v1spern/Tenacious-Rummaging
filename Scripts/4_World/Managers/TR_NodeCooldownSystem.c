@@ -50,18 +50,16 @@ class TR_NodeCooldownSystem
         s_Instance = this;
     }
 
-    // Public API used by MissionServer & action code
-
     void Load()
     {
         LoadFromDisk();
-        TR_Debug.Log("[Cooldowns] Loaded from disk.");
+        TR_Debug.Log("[Cooldowns] Loaded from file - OK!");
     }
 
     void Save()
     {
         SaveToDisk(true);
-        TR_Debug.Log("[Cooldowns] Saved to disk.");
+        TR_Debug.Log("[Cooldowns] Saved to file - OK!");
     }
 
     bool IsOnCooldown(PlayerBase player, string key, float durationSec, bool globalScope)
@@ -175,8 +173,6 @@ class TR_NodeCooldownSystem
         return 0;
     }
 
-    // Persistence
-
     void LoadFromDisk()
     {
         string path = GetFilePath();
@@ -192,7 +188,6 @@ class TR_NodeCooldownSystem
         TR_CooldownsSave data = new TR_CooldownsSave();
         JsonFileLoader<TR_CooldownsSave>.JsonLoadFile(path, data);
 
-        // Basic sanity
         string world = GetGame().GetWorldName();
         if (data.version != 1)
         {
@@ -207,7 +202,6 @@ class TR_NodeCooldownSystem
 
         int now = NowMs();
 
-        // Global
         if (data.global)
         {
             for (int gi = 0; gi < data.global.Count(); gi++)
@@ -222,7 +216,6 @@ class TR_NodeCooldownSystem
             }
         }
 
-        // Players
         if (data.players)
         {
             for (int pi = 0; pi < data.players.Count(); pi++)
@@ -250,10 +243,9 @@ class TR_NodeCooldownSystem
             }
         }
 
-        // Summary
         int gCount = m_Global.Count();
         int pPlayers = m_Players.Count();
-        TR_Debug.Log("[Cooldowns] Loaded: global=" + gCount.ToString() + " playerBuckets=" + pPlayers.ToString());
+        TR_Debug.Log("[Cooldowns] Counted from file: global='" + gCount.ToString() + "' playerBuckets='" + pPlayers.ToString() + "'");
     }
 
     void SaveToDisk(bool force)
@@ -266,7 +258,6 @@ class TR_NodeCooldownSystem
 
         int now = NowMs();
 
-        // Global -> remaining_ms
         for (int gi = 0; gi < m_Global.Count(); gi++)
         {
             string gkey = m_Global.GetKey(gi);
@@ -276,7 +267,6 @@ class TR_NodeCooldownSystem
                 data.global.Set(gkey, grem);
         }
 
-        // Players -> rows
         for (int pi = 0; pi < m_Players.Count(); pi++)
         {
             string pid = m_Players.GetKey(pi);
@@ -303,10 +293,8 @@ class TR_NodeCooldownSystem
 
         int gW = data.global.Count();
         int rows = data.players.Count();
-        TR_Debug.Log("[Cooldowns] Saved: global=" + gW.ToString() + " playerRows=" + rows.ToString());
+        TR_Debug.Log("[Cooldowns] Counted from server memory: global='" + gW.ToString() + "', playerRows='" + rows.ToString() + "'");
     }
-
-    // Helpers
 
     protected string GetFilePath()
     {

@@ -16,6 +16,9 @@ modded class PlayerBase extends ManBase
             ScriptRPC rpc = new ScriptRPC();
             rpc.Send(this, TR_SearchNodesDb.TRPC_REQUEST_SYNC, true, null);
             TR_Debug.Log("[PlayerBase] Sent TRPC_REQUEST_SYNC");
+            ScriptRPC rpc2 = new ScriptRPC();
+            rpc2.Send(this, TR_SearchNodesDb.TRPC_REQUEST_PROMPTS, true, null);
+            TR_Debug.Log("[PlayerBase] Sent TRPC_REQUEST_PROMPTS");
         }
     }
 
@@ -36,7 +39,7 @@ modded class PlayerBase extends ManBase
 
     override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
     {
-        if (rpc_type == TR_SearchNodesDb.TRPC_SYNC_SEARCHNODES || rpc_type == TR_SearchNodesDb.TRPC_CLEAR_SEARCHNODES)
+        if (rpc_type == TR_SearchNodesDb.TRPC_SYNC_SEARCHNODES || rpc_type == TR_SearchNodesDb.TRPC_CLEAR_SEARCHNODES || rpc_type == TR_SearchNodesDb.TRPC_SYNC_PROMPTS)
         {
             TR_SearchNodesDb.OnRpc_Receive(rpc_type, ctx);
             return;

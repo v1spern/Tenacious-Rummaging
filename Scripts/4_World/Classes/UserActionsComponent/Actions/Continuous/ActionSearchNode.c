@@ -1,4 +1,4 @@
-// Player rummage action
+// Action SearchNode
 
 class ActionSearchNodeCB : ActionContinuousBaseCB
 {
@@ -13,6 +13,76 @@ class ActionSearchNode : ActionContinuousBase
 	protected EffectSound m_RummageSfx;
 	protected bool m_RummagePlayed;
 
+	static string TR_ASN_Name(PlayerBase pb)
+	{
+		if (!pb || !pb.GetIdentity()) return "";
+		return pb.GetIdentity().GetName();
+	}
+
+	static string TR_ASN_Steam(PlayerBase pb)
+	{
+		if (!pb || !pb.GetIdentity()) return "";
+		return pb.GetIdentity().GetId();
+	}
+
+	static string TR_ASN_Type(Object o)
+	{
+		if (!o) return "";
+		return o.GetType();
+	}
+
+	static int TR_ASN_ShortHash(string str)
+	{
+		int h = str.Hash();
+		if (h < 0) h = -h;
+		return h % 10000000;
+	}
+
+	static string TR_ASN_JoinCSV(TStringArray arr)
+	{
+	    string acc = "";
+	    if (!arr) return acc;
+	    int n = arr.Count();
+	    int i = 0;
+	    while (i < n)
+	    {
+	        if (i > 0) acc += ",";
+	        acc += arr.Get(i);
+	        i++;
+	    }
+	    return acc;
+	}
+
+	static void TR_ASN_LogSummary(PlayerBase pb, Object tgt, string nodeKey, string lootGroup, float chancePct, float rollPct, string outcome, int spawnedCount, string itemsCsv)
+	{
+		string n = TR_ASN_Name(pb);
+		string s64 = TR_ASN_Steam(pb);
+		string t = TR_ASN_Type(tgt);
+		string k = nodeKey;
+		string g = lootGroup;
+		if (k == "") k = "<unknown>";
+		if (g == "") g = "<unknown>";
+		string c = chancePct.ToString();
+		string r = rollPct.ToString();
+		string sp = spawnedCount.ToString();
+		int kh = TR_ASN_ShortHash(k);
+		string khs = kh.ToString();
+
+		string line = "[RummageResult] ";
+		line += "player='";  line += n;    line += "' ";
+		line += "steam64='"; line += s64;  line += "' ";
+		line += "target='";  line += t;    line += "' ";
+		line += "node='";    line += k;    line += "' ";
+		line += "group='";   line += g;    line += "' ";
+		line += "chance='";  line += c;    line += "' ";
+		line += "roll='";    line += r;    line += "' ";
+		line += "outcome='"; line += outcome; line += "' ";
+		line += "spawned='"; line += sp;   line += "' ";
+		line += "items='";   line += itemsCsv; line += "' ";
+		line += "keyhash='"; line += khs;  line += "'";
+		TR_Debug.Log(line);
+	}
+
 	void ActionSearchNode()
 	{
 		m_CallbackClass = ActionSearchNodeCB;
@@ -20,9 +90,8 @@ class ActionSearchNode : ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
-		m_Text = "Rummage here for loot";
+		m_Text = TR_Constants.DEFAULT_RUMMAGE_PROMPT;
 		m_RummagePlayed = false;
-		TR_Debug.Log("[Search Node] ActionSearchNode constructed");
 	}
 
 	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
@@ -31,23 +100,27 @@ class ActionSearchNode : ActionContinuousBase
 		if (player.GetItemInHands()) return false;
 		if (!target) return false;
 
-		// Static / Class-Wide
 		Object obj = target.GetObject();
 		Object par = target.GetParent();
 
-		if (obj && TR_SearchNodeUtils.CanSearchNode(obj)) return true;
-		if (par && TR_SearchNodeUtils.CanSearchNode(par)) return true;
+		if (obj && TR_SearchNodeUtils.CanSearchNode(obj)) { TR_SearchNode def = TR_SearchNodesDb.Match(obj); string src; string __np = ""; string __lg = ""; if (def) { if (def.PromptText != "") __np = def.PromptText; __lg = def.LootGroup; } m_Text = TR_LootSettingsManager.ResolvePromptText(__np, __lg, src); return true; }
+		if (par && TR_SearchNodeUtils.CanSearchNode(par)) { TR_SearchNode def2 = TR_SearchNodesDb.Match(par); string src2; string __np2 = ""; string __lg2 = ""; if (def2) { if (def2.PromptText != "") __np2 = def2.PromptText; __lg2 = def2.LootGroup; } m_Text = TR_LootSettingsManager.ResolvePromptText(__np2, __lg2, src2); return true; }
 
-		// Interior
 		House hObj = House.Cast(obj);
 		House hPar = House.Cast(par);
 		House h = hObj;
 		if (!h) h = hPar;
 		if (!h) return false;
 
-		string tok = TR_Interior.ComputeFurnitureToken(player, h); // quantized
-		if (TR_SearchNodesDb.HasInteriorPieceNear(h, tok, player.GetPosition(), 2.0))
+		string tok = TR_Interior.ComputeFurnitureToken(player, h);
+		string __lgI; string __tokI;
+		if (TR_SearchNodesDb.ResolveInteriorMatchNear(h, tok, player.GetPosition(), 2.0, __lgI, __tokI))
+		{
+			string __srcI;
+			string __npI = TR_SearchNodesDb.GetInteriorPromptFor(h, __tokI);
+			m_Text = TR_LootSettingsManager.ResolvePromptText(__npI, __lgI, __srcI);
 			return true;
+		}
 
 		return false;
 	}
@@ -70,7 +143,6 @@ class ActionSearchNode : ActionContinuousBase
 
 	override bool AddActionJuncture(ActionData action_data) { return true; }
 
-	// Client stuff
 	override void OnStartClient(ActionData action_data)
 	{
 		if (!m_RummagePlayed)
@@ -93,7 +165,6 @@ class ActionSearchNode : ActionContinuousBase
 		m_RummagePlayed = false;
 	}
 
-	// Audio helpers
 	void PlayerSearchingSound(ActionData action_data)
 	{
 		PlayerBase pb = PlayerBase.Cast(action_data.m_Player);
@@ -127,7 +198,6 @@ class ActionSearchNode : ActionContinuousBase
 		Object obj = action_data.m_Target.GetObject();
 		Object par = action_data.m_Target.GetParent();
 
-		// Static / Class-wide path
 		TR_SearchNode def = null;
 		Object usedObj = null;
 
@@ -140,7 +210,6 @@ class ActionSearchNode : ActionContinuousBase
 			return;
 		}
 
-		// Interior, range-aware resolver
 		House house = House.Cast(par);
 		if (!house) house = House.Cast(obj);
 		if (!house) return;
@@ -151,16 +220,12 @@ class ActionSearchNode : ActionContinuousBase
 		string lootGroup;
 		bool ok = TR_SearchNodesDb.ResolveInteriorMatchNear(house, reqTok, player.GetPosition(), 2.0, lootGroup, matchedTok);
 		if (!ok || lootGroup == "")
-		{
-			TR_Debug.Log("[Search Node] Interior no-match near: house=" + house.GetType() + " reqTok=" + reqTok);
 			return;
-		}
 
 		string cdKey = TR_Interior.BuildInteriorCooldownKey(house, matchedTok);
 		SpawnLootResolvedAdvanced(player, house, cdKey, lootGroup, house.GetType(), "__interior_tok__");
 	}
 
-	// Existing helper paths
 	protected void PlayLootFoundClientOrRPC(PlayerBase player)
 	{
 		if (!player) return;
@@ -186,19 +251,6 @@ class ActionSearchNode : ActionContinuousBase
 
 		TR_PlayerSearchLogger.Get().LogSearchAttemptEx(player, usedObj, cooldownKey, lootCategory, nodeClass, nodeModel);
 
-		float cooldownTime = TR_LootSettingsManager.GetCooldownForCategory(lootCategory);
-		bool globalScope = TR_LootSettingsManager.IsCooldownGlobal();
-
-		if (TR_NodeCooldownSystem.Get().IsOnCooldown(player, cooldownKey, cooldownTime, globalScope))
-		{
-			int remainingSec = TR_NodeCooldownSystem.Get().Remaining(player, cooldownKey, cooldownTime, globalScope);
-			string cdMsg = TR_LootGroups.GetCooldownMessage(lootCategory);
-			if (cdMsg == "") cdMsg = "This spot looks like it has been recently searched.";
-			TR_Notify.Send(player, cdMsg);
-			TR_PlayerSearchLogger.Get().LogCooldownBlockedEx(player, usedObj, cooldownKey, remainingSec, lootCategory, nodeClass, nodeModel);
-			return;
-		}
-
 		TR_LootGroupDef groupDef = TR_LootGroups.Get(lootCategory);
 		if (!groupDef) return;
 
@@ -208,11 +260,31 @@ class ActionSearchNode : ActionContinuousBase
 		if (attemptPct > 100.0) attemptPct = 100.0;
 		float attemptFrac = attemptPct / 100.0;
 
+		float roll01 = 0.0;
+		float rollPct = 0.0;
+
+		float cooldownTime = TR_LootSettingsManager.GetCooldownForCategory(lootCategory);
+		bool globalScope = TR_LootSettingsManager.IsCooldownGlobal();
+
+		if (TR_NodeCooldownSystem.Get().IsOnCooldown(player, cooldownKey, cooldownTime, globalScope))
+		{
+			int remainingSec = TR_NodeCooldownSystem.Get().Remaining(player, cooldownKey, cooldownTime, globalScope);
+			string cdMsg = TR_LootGroups.GetCooldownMessage(lootCategory);
+			if (cdMsg == "") cdMsg = "This spot looks like it has been recently searched.";
+			TR_Notify.Send(player, cdMsg);
+			TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "COOLDOWN", 0, "");
+			TR_PlayerSearchLogger.Get().LogCooldownBlockedEx(player, usedObj, cooldownKey, remainingSec, lootCategory, nodeClass, nodeModel);
+			return;
+		}
+
 		TR_NodeCooldownSystem.Get().StartCooldown(player, cooldownKey, cooldownTime, globalScope);
 
-		float roll01 = Roll01FromPercent();
+		roll01 = Roll01FromPercent();
+		rollPct = roll01 * 100.0;
+
 		if (roll01 > attemptFrac)
 		{
+			TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "FAIL", 0, "");
 			TR_Notify.Send(player, "You found nothing.");
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
@@ -221,39 +293,29 @@ class ActionSearchNode : ActionContinuousBase
 
 		int spawnedCount = 0;
 		int toSpawn = Math.RandomIntInclusive(groupDef.minItems, groupDef.maxItems);
+		TStringArray spawnedTypes = new TStringArray;
 
 		for (int i = 0; i < toSpawn; i++)
 		{
 			TR_LootEntry entry = TR_LootGroups.WeightedPickEntry(groupDef.items);
 			if (!entry) continue;
 
-			// Resolve single 'type' OR 'type_range' variants to a concrete class
 			string __resolvedType = TR_ResolveLootType(entry);
 			if (__resolvedType == "") continue;
-
-			// Simple debug line without external guard (TR_Debug.Log can self-gate)
-			int __rangeCnt = 0;
-			if (entry.type_range) __rangeCnt = entry.type_range.Count();
-			TR_Debug.Log("[ItemSpawnProperties] Spawn type resolved=" + __resolvedType + " (type_range count=" + __rangeCnt.ToString() + ")");
 
 			float offsetX = Math.RandomFloatInclusive(-0.3, 0.3);
 			float offsetZ = Math.RandomFloatInclusive(-0.3, 0.3);
 
 			int flags = ECE_PLACE_ON_SURFACE;
 
-			// Spawn at player's current position, then scatter
 			EntityAI item = EntityAI.Cast(GetGame().CreateObjectEx(__resolvedType, player.GetPosition(), flags));
 			if (item)
 			{
 				item.SetPosition(item.GetPosition() + Vector(offsetX, 0, offsetZ));
-
-				// Apply standard overrides (health/quantity)
 				TR_LootRuntime.ApplyOverrides(ItemBase.Cast(item), entry);
 
-				// Manual attachments with random count
 				int pool = 0;
 				if (entry.Attachments) pool = entry.Attachments.Count();
-
 				if (pool > 0)
 				{
 					int minPick = entry.AttachCountMin;
@@ -265,14 +327,11 @@ class ActionSearchNode : ActionContinuousBase
 
 					int want = 0;
 					if (maxPick >= minPick) want = Math.RandomIntInclusive(minPick, maxPick);
-
 					if (want > pool) want = pool;
 
-					// Build an index bag 0..pool-1
 					array<int> idx = new array<int>;
 					for (int t = 0; t < pool; t++) idx.Insert(t);
 
-					// Pick 'want' unique attachments by random removing
 					for (int k = 0; k < want; k++)
 					{
 						if (idx.Count() <= 0) break;
@@ -281,31 +340,11 @@ class ActionSearchNode : ActionContinuousBase
 						idx.Remove(pick);
 
 						string attType = entry.Attachments.Get(atIndex);
-						EntityAI att = item.GetInventory().CreateAttachment(attType);
-						if (att)
-							TR_Debug.Log("[ItemSpawnProperties] +Attachment OK item=" + __resolvedType + " -> " + attType);
-						else
-							TR_Debug.Log("[ItemSpawnProperties] +Attachment FAIL item=" + __resolvedType + " -> " + attType);
+						item.GetInventory().CreateAttachment(attType);
 					}
 				}
 
-				// Log resulting attachments
-				int ac = item.GetInventory().AttachmentCount();
-				if (ac > 0)
-				{
-					array<string> attNames = new array<string>;
-					for (int ai2 = 0; ai2 < ac; ai2++)
-					{
-						EntityAI a2 = item.GetInventory().GetAttachmentFromIndex(ai2);
-						if (a2) attNames.Insert(a2.GetType());
-					}
-					TR_Debug.Log("[ItemSpawnProperties] Attached count=" + ac.ToString() + " on " + __resolvedType + " -> " + attNames.ToString());
-				}
-				else
-				{
-					TR_Debug.Log("[ItemSpawnProperties] Attached count=0 on " + __resolvedType);
-				}
-
+				spawnedTypes.Insert(__resolvedType);
 				spawnedCount++;
 				TR_PlayerSearchLogger.Get().LogLootEx(player, usedObj, cooldownKey, item, lootCategory, nodeClass, nodeModel);
 			}
@@ -313,12 +352,16 @@ class ActionSearchNode : ActionContinuousBase
 
 		if (spawnedCount == 0)
 		{
+			TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "FAIL", 0, "");
 			TR_Notify.Send(player, "You found nothing.");
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
 		}
 		else
 		{
+			string itemsCsv = TR_ASN_JoinCSV(spawnedTypes);
+			string __src; string __np3 = ""; string __lg3 = lootCategory; TR_SearchNode __def3b = TR_SearchNodesDb.Match(usedObj); if (__def3b) { if (__def3b.PromptText != "") __np3 = __def3b.PromptText; if (__def3b.LootGroup != "") __lg3 = __def3b.LootGroup; } string __pt = TR_LootSettingsManager.ResolvePromptText(__np3, __lg3, __src); PlayerIdentity __pid = player.GetIdentity(); string __nm = ""; if (__pid) __nm = __pid.GetName(); TR_Debug.Log("[PromptText] player=" + __nm + " level=" + __src + " group=" + lootCategory + " text='" + __pt + "'");
+            TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "SUCCESS", spawnedCount, itemsCsv);
 			TR_Notify.Send(player, "You find some stuff and put it beside you on the ground. (Items: " + spawnedCount.ToString() + ")");
 			PlayLootFoundClientOrRPC(player);
 			TryApplySearchHazard(player, lootCategory);
@@ -375,7 +418,7 @@ class ActionSearchNode : ActionContinuousBase
 
 	protected void ApplyRandomBleedingWound(PlayerBase player)
 	{
-		array<string> sels = new array<string>;
+		TStringArray sels = new TStringArray;
 		sels.Insert("LeftArm");
 		sels.Insert("RightArm");
 		int idx = Math.RandomInt(0, sels.Count());

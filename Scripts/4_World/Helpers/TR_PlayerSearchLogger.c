@@ -24,13 +24,11 @@ class TR_PlayerSearchLogger
 		m_CsvEnabled = TR_LootSettingsManager.IsCsvLoggingEnabled();
 	}
 
-	// Allow external refresh if settings change at runtime
 	void RefreshCsvEnabled()
 	{
 		m_CsvEnabled = TR_LootSettingsManager.IsCsvLoggingEnabled();
 	}
 
-	// Timestamping
 	string NowIsoUtc()
 	{
 		int y; int mo; int d; int h; int mi; int s;
@@ -45,7 +43,6 @@ class TR_PlayerSearchLogger
 		return 0;
 	}
 
-	// Public API
 	void LogSearchAttempt(PlayerBase player, Object target, string nodeKey)
 	{
 		LogSearchAttemptEx(player, target, nodeKey, "", "", "");
@@ -61,7 +58,6 @@ class TR_PlayerSearchLogger
 		LogLootEx(player, target, nodeKey, item, "", "", "");
 	}
 
-	// Public API (extended metadata) — writes text log; CSV is mirrored from that same text.
 	void LogSearchAttemptEx(PlayerBase player, Object target, string nodeKey, string lootCategory, string nodeClass, string nodeModel)
 	{
 		string ts = NowIsoUtc();
@@ -186,7 +182,6 @@ class TR_PlayerSearchLogger
 		WriteLine(line);
 	}
 
-	// Cooldown-blocked attempts
 	void LogCooldownBlockedEx(PlayerBase player, Object target, string nodeKey, int remainingSec, string lootCategory, string nodeClass, string nodeModel)
 	{
 		string ts = NowIsoUtc();
@@ -227,7 +222,6 @@ class TR_PlayerSearchLogger
 		LogCooldownBlockedEx(player, target, nodeKey, remainingSec, "", "", "");
 	}
 
-	// Helpers: identity/target
 	protected void GetPlayerIdentityParts(PlayerBase player, out string name, out string steam64)
 	{
 		name = "unknown";
@@ -274,7 +268,6 @@ class TR_PlayerSearchLogger
 		return false;
 	}
 
-	// Prefer engine; then configs; final fallback: parse from key.
 	protected string ResolveModelForTarget(Object target)
 	{
 		if (!target) return "";
@@ -304,7 +297,6 @@ class TR_PlayerSearchLogger
 		return "";
 	}
 
-	// Parse the 3rd colon-separated token from key: "O:map:MODEL:x|y|z"
 	protected string ExtractModelFromKey(string key)
 	{
 		if (key == "") return "";
@@ -335,7 +327,6 @@ class TR_PlayerSearchLogger
 		return key.Substring(startPos, len);
 	}
 	
-	// Helpers: classification/formatting
 	protected string GetItemLocation(EntityAI item)
 	{
 		if (!item) return "unknown";
@@ -372,10 +363,8 @@ class TR_PlayerSearchLogger
 		return whole.ToString() + "." + ZeroPad(frac, 3);
 	}
 
-	// I/O
 	protected void WriteLine(string line)
 	{
-		// Write the standard text log line
 		FileHandle fh = OpenFile(m_LogPath, FileMode.APPEND);
 		if (fh)
 		{
@@ -383,7 +372,6 @@ class TR_PlayerSearchLogger
 			CloseFile(fh);
 		}
 
-		// Mirror the exact same line into CSV (single quoted cell)
 		if (m_CsvEnabled)
 		{
 			WriteCsvMirror(line);
@@ -392,7 +380,6 @@ class TR_PlayerSearchLogger
 
 	protected void WriteCsvMirror(string raw)
 	{
-		// Transform structured log line into CSV columns
 		string s = raw;
 		s.Replace("\r", " ");
 		s.Replace("\n", " ");
@@ -405,7 +392,7 @@ class TR_PlayerSearchLogger
 		if (s.Length() > 2 && s.Substring(0, 1) == "[" && rb > 0)
 		{
 			ts = s.Substring(1, rb - 1);
-			int evStart = rb + 2; // assume "] "
+			int evStart = rb + 2;
 			if (evStart < s.Length())
 			{
 				string tail = s.Substring(evStart, s.Length() - evStart);
@@ -444,7 +431,6 @@ class TR_PlayerSearchLogger
 		string chance = "";
 		string remaining_s = "";
 
-		// Parse key=value tokens in the remainder (split by spaces)
 		int i = 0;
 		while (i < rest.Length())
 		{
@@ -484,7 +470,7 @@ class TR_PlayerSearchLogger
 			else if (k == "remaining_s") remaining_s = v;
 			else if (k == "target")
 			{
-				target = v; // TYPE@x,y,z
+				target = v;
 				int at = v.IndexOf("@");
 				if (at > 0)
 				{
@@ -509,7 +495,7 @@ class TR_PlayerSearchLogger
 			}
 		}
 
-		// Build quoted CSV cells
+		// CSV stuff
 		string dq = "\"";
 		ref array<string> cols = new array<string>();
 		string qv;
@@ -535,7 +521,6 @@ class TR_PlayerSearchLogger
 		qv = chance; qv.Replace(dq, dq + dq); cols.Insert(dq + qv + dq);
 		qv = remaining_s; qv.Replace(dq, dq + dq); cols.Insert(dq + qv + dq);
 
-		// Join with commas
 		string line = "";
 		for (int idx = 0; idx < cols.Count(); idx++)
 		{

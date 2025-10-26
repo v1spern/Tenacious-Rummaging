@@ -1,4 +1,4 @@
-// Searchable Nodes Database - also known as the script from hell.
+// Searchable Nodes Database - a.k.a. the script from hell. It can rot in the depths of the abyss.
 
 class TR_SearchNode
 {
@@ -8,18 +8,20 @@ class TR_SearchNode
     string Position;
     string LootGroup;
     string Comment;
+    string PromptText;
 
     void TR_SearchNode()
     {
         IsClassWide = false;
         ClassName   = "";
+        PromptText = "";
         ModelName   = "";
         Position    = "0 0 0";
         LootGroup   = "";
         Comment     = "";
     }
 
-    static TR_SearchNode Create(bool isClassWide, string className, string modelName, vector pos, string lootGroup, string comment = "")
+    static TR_SearchNode Create(bool isClassWide, string className, string modelName, vector pos, string lootGroup, string comment = "", string promptText = "")
     {
         TR_SearchNode node = new TR_SearchNode();
         node.IsClassWide = isClassWide;
@@ -28,6 +30,7 @@ class TR_SearchNode
         node.Position    = pos.ToString(); // "x y z"
         node.LootGroup   = lootGroup;
         node.Comment     = comment;
+            node.PromptText  = promptText;
         return node;
     }
 
@@ -43,6 +46,8 @@ class TR_SearchNodesDb
     static const int TRPC_SYNC_SEARCHNODES  = 98765;
     static const int TRPC_CLEAR_SEARCHNODES = 98766;
     static const int TRPC_REQUEST_SYNC      = 98767;
+    static const int TRPC_SYNC_PROMPTS      = 98768;
+    static const int TRPC_REQUEST_PROMPTS   = 98769;
 
     // Tunables
     static const float TR_STATIC_MATCH_RADIUS = 1.0;
@@ -222,7 +227,13 @@ class TR_SearchNodesDb
         {
             for (int i = 0; i < s_SearchNodes.Count(); i++)
                 SendNodeToClient(s_SearchNodes[i], null, null);
-            TR_Debug.Log("[NodesDB] Sent " + s_SearchNodes.Count().ToString() + " nodes.");
+            SyncPromptsToClient(null, null);
+            TR_Debug.Log("[NodesDB] '" + s_SearchNodes.Count().ToString() + "' nodes accounted for");
+        }
+        if (GetGame().IsClient())
+        {
+            ScriptRPC __pr = new ScriptRPC();
+            __pr.Send(null, TRPC_REQUEST_PROMPTS, true, null);
         }
     }
 
@@ -313,6 +324,20 @@ class TR_SearchNodesDb
 
     // Server -> Client sync
 
+    static string GetInteriorPromptFor(House h, string matchedToken)
+    {
+        if (!h || matchedToken == "") return "";
+        string hLow = ToLowerSafe(h.GetType());
+        if (!s_InteriorPieceByHouseAndTok) return "";
+        string key = hLow + "#" + matchedToken;
+        if (!s_InteriorPieceByHouseAndTok.Contains(key)) return "";
+        TR_SearchNode n = s_InteriorPieceByHouseAndTok.Get(key);
+        if (!n) return "";
+        string p = n.PromptText;
+        if (p != "") { p.Trim(); }
+        return p;
+    }
+
     static void SendNodeToClient(TR_SearchNode node, Object target = null, PlayerIdentity id = null)
     {
         if (!node) return;
@@ -324,7 +349,32 @@ class TR_SearchNodesDb
         rpc.Write(node.Position);
         rpc.Write(node.LootGroup);
         rpc.Write(node.Comment);
+        // send raw node-level prompt text; client will resolve group/default locally
+        rpc.Write(node.PromptText);
         rpc.Send(target, TRPC_SYNC_SEARCHNODES, true, id);
+    }
+
+    
+    static void SyncPromptsToClient(Object target, PlayerIdentity id)
+    {
+        ScriptRPC rpc = new ScriptRPC();
+        string dp = TR_LootSettingsManager.GetDefaultPromptText();
+        rpc.Write(dp);
+
+        // send group count and pairs
+        array<string> names = TR_LootGroups.ListNames();
+        int n = 0;
+        if (names) n = names.Count();
+        rpc.Write(n);
+        for (int i = 0; i < n; i++)
+        {
+            string key = names.Get(i);
+            if (key != "") key.Trim();
+            string gpt = TR_LootGroups.GetPromptText(key);
+            rpc.Write(key);
+            rpc.Write(gpt);
+        }
+        rpc.Send(target, TRPC_SYNC_PROMPTS, true, id);
     }
 
     static void SendClearToClients(Object target = null, PlayerIdentity id = null)
@@ -335,6 +385,30 @@ class TR_SearchNodesDb
 
     static void OnRpc_Receive(int rpc_type, ParamsReadContext ctx)
     {
+        if (rpc_type == TRPC_REQUEST_PROMPTS)
+        {
+            if (GetGame().IsServer()) { SyncPromptsToClient(null, null); }
+            return;
+        }
+
+        if (rpc_type == TRPC_SYNC_PROMPTS)
+        {
+            string defaultPrompt;
+            if (!ctx.Read(defaultPrompt)) return;
+            TR_GroupPromptsClient.SetDefault(defaultPrompt);
+
+            int count = 0;
+            if (!ctx.Read(count)) return;
+            for (int i = 0; i < count; i++)
+            {
+                string gk; string gpt;
+                if (!ctx.Read(gk)) return;
+                if (!ctx.Read(gpt)) return;
+                if (gpt != "") TR_GroupPromptsClient.SetGroupPrompt(gk, gpt);
+            }
+            return;
+        }
+
         if (rpc_type == TRPC_CLEAR_SEARCHNODES)
         {
             s_SearchNodesCache = new map<string, ref array<ref TR_SearchNode> >();
@@ -358,6 +432,9 @@ class TR_SearchNodesDb
             if (!ctx.Read(lootGroup))   return;
             if (!ctx.Read(comment))     return;
 
+            string promptText;
+            if (!ctx.Read(promptText)) return;
+
             TR_SearchNode node = new TR_SearchNode();
             node.IsClassWide = isClassWide;
             node.ClassName   = className;
@@ -365,6 +442,7 @@ class TR_SearchNodesDb
             node.Position    = posStr;
             node.LootGroup   = lootGroup;
             node.Comment     = comment;
+            node.PromptText  = promptText;
 
             if (!s_SearchNodesCache) s_SearchNodesCache = new map<string, ref array<ref TR_SearchNode> >();
             string modelNorm = NormalizeModelKey(node.ModelName);
@@ -643,7 +721,7 @@ class TR_SearchNodesDb
             string exCanon = BuildCanonicalKeyForNode(ex);
             if (exCanon == newCanon)
             {
-                TR_Debug.Log("[NodesDB] AddStaticNode dedup via canonical key: model=" + modelName + " pos=" + posStr);
+                TR_Debug.Log("[NodesDB] AddStaticNode dedup via canonical key: model='" + modelName + "' pos='" + posStr + "'");
                 return;
             }
         }
@@ -671,7 +749,7 @@ class TR_SearchNodesDb
             string exNorm = NormalizeModelKey(ex.ModelName);
             if (exNorm == normModel)
             {
-                TR_Debug.Log("[NodesDB] AddClassWideNode dedup: " + className + " / " + modelName + " already exists.");
+                TR_Debug.Log("[NodesDB] AddClassWideNode dedup: '" + className + "' / '" + modelName + "' already exists");
                 return;
             }
         }
@@ -693,7 +771,7 @@ class TR_SearchNodesDb
 
         if (HasInteriorForHouse(hLow))
         {
-            TR_Debug.Log("[NodesDB] AddInteriorClassNode dedup: " + hLow + " already interior-enabled.");
+            TR_Debug.Log("[NodesDB] AddInteriorNode dedup: building-model '" + hLow + "' already interior-enabled");
             return;
         }
 
@@ -708,7 +786,7 @@ class TR_SearchNodesDb
         if (GetGame().IsServer())
             SendNodeToClient(row, null, null);
 
-        TR_Debug.Log("[NodesDB] AddInteriorClassNode OK: house=" + hLow + " group=" + lootGroup + " label=" + label);
+        TR_Debug.Log("[NodesDB] AddInteriorNode OK: house='" + hLow + "' group='" + lootGroup + "' label='" + label + "'");
     }
 
     static string GetKey(TR_SearchNode node)
@@ -736,6 +814,8 @@ class TR_SearchNodesDb
     {
         if (!GetGame().IsServer() || !player || !id) return;
         if (!s_SearchNodes) Init();
+
+        SyncPromptsToClient(player, id);
 
         for (int i = 0; i < s_SearchNodes.Count(); i++)
             SendNodeToClient(s_SearchNodes[i], player, id);

@@ -2,6 +2,9 @@
 
 class TR_Constants
 {
+	// Fallback rummage prompt
+	static const string DEFAULT_RUMMAGE_PROMPT = "Rummage here for loot";
+
 	static const string MOD_NAME   = "Tenacious Rummaging";
 	static const string MOD_AUTHOR = "v1sper";
 

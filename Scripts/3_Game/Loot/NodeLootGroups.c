@@ -1,4 +1,10 @@
-// Loot groups DB
+/*
+NodeLootGroups.c — TR v1.0.4d-dev
+Changelog:
+- Removed normalization backfill/write-back on existing LootGroups.json.
+- Load() now only generates a default file when missing; it never alters an existing file.
+- SaveManual() retained for explicit, manual writes (still normalizes before saving).
+*/
 
 class TR_LootEntry
 {
@@ -6,7 +12,6 @@ class TR_LootEntry
 	ref array<string> type_range;
 	int    weight;
 
-	// Spawn overrides
 	float  MinHealth;
 	float  MaxHealth;
 	int    MinQuantity;
@@ -37,6 +42,7 @@ class TR_LootEntry
 class TR_LootGroupDef
 {
 	float chance;
+	string promptText;
 	int   minItems;
 	int   maxItems;
 	ref array<ref TR_LootEntry> items;
@@ -46,6 +52,7 @@ class TR_LootGroupDef
 	void TR_LootGroupDef()
 	{
 		chance   = 1.0;
+		promptText = "";
 		minItems = 1;
 		maxItems = 1;
 		items    = new array<ref TR_LootEntry>;
@@ -61,22 +68,46 @@ class TR_LootGroupsFile
 
 class TR_LootGroups
 {
-	protected static ref TR_LootGroupsFile s_File;
+    protected static ref TR_LootGroupsFile s_File;
+    protected static ref map<string, string> s_KeyLowerToKey;
 
-	protected static void Normalize()
+    protected static string _NormKey(string name)
+    {
+        if (name == "") return "";
+        string k = name;
+        k.Trim();
+        k.ToLower();
+        return k;
+    }
+
+    protected static void _BuildLowerKeyIndex()
+    {
+        s_KeyLowerToKey = new map<string, string>();
+        if (s_File && s_File.groups)
+        {
+            foreach (string key1, TR_LootGroupDef g : s_File.groups) {
+                string lk = _NormKey(key1);
+                if (lk != "") s_KeyLowerToKey.Set(lk, key1);
+            }
+        }
+    }
+
+	protected static bool Normalize()
 	{
-		if (!s_File) return;
+		bool mutated = false;
+        if (!s_File) return false;
+        if (!s_File.groups) return false;
 
 		foreach (string name, TR_LootGroupDef def : s_File.groups)
 		{
 			if (!def) continue;
 
-			if (def.chance < 0.0) def.chance = 0.0;
-			if (def.chance > 100.0) def.chance = 100.0; // we accept 0..1 or 0..100 at use site
-			if (def.minItems < 0) def.minItems = 0;
-			if (def.maxItems < def.minItems) def.maxItems = def.minItems;
+			if (def.chance < 0.0) { def.chance = 0.0; mutated = true; }
+			if (def.chance > 100.0) { def.chance = 100.0; mutated = true; }
+			if (def.minItems < 0) { def.minItems = 0; mutated = true; }
+			if (def.maxItems < def.minItems) { def.maxItems = def.minItems; mutated = true; }
 
-			if (!def.items) def.items = new array<ref TR_LootEntry>;
+			if (!def.items) { def.items = new array<ref TR_LootEntry>; mutated = true; }
 
 			for (int i = def.items.Count() - 1; i >= 0; i--)
 			{
@@ -84,6 +115,7 @@ class TR_LootGroups
 				if (!e)
 				{
 					def.items.Remove(i);
+					mutated = true;
 					continue;
 				}
 
@@ -92,75 +124,118 @@ class TR_LootGroups
 				if (!hasSingle && !hasRange)
 				{
 					def.items.Remove(i);
+					mutated = true;
 					continue;
 				}
 
 				if (hasSingle && hasRange)
 				{
 					e.type_range = null;
+					mutated = true;
 				}
 
-				if (e.weight < 0) e.weight = 0;
+				if (e.weight < 0) { e.weight = 0; mutated = true; }
 
-				if (!e.Attachments) e.Attachments = new array<string>;
+				if (!e.Attachments) { e.Attachments = new array<string>; mutated = true; }
 
 				for (int k = e.Attachments.Count() - 1; k >= 0; k--)
 				{
-					if (e.Attachments.Get(k) == "") e.Attachments.Remove(k);
+					if (e.Attachments.Get(k) == "") { e.Attachments.Remove(k); mutated = true; }
 				}
 
-				// Attachment pick bounds
-				if (e.AttachCountMin < 0) e.AttachCountMin = 0;
-				if (e.AttachCountMax < e.AttachCountMin) e.AttachCountMax = e.AttachCountMin;
+				if (e.AttachCountMin < 0) { e.AttachCountMin = 0; mutated = true; }
+				if (e.AttachCountMax < e.AttachCountMin) { e.AttachCountMax = e.AttachCountMin; mutated = true; }
 			}
 		}
+		return mutated;
 	}
+
+    protected static TR_LootGroupsFile _CreateDefault()
+    {
+        TR_LootGroupsFile defFile = new TR_LootGroupsFile;
+
+        TR_LootGroupDef general = new TR_LootGroupDef;
+        TR_LootEntry a = new TR_LootEntry;
+        a.type = "Rag"; a.weight = 50; a.MinHealth = 0.70; a.MaxHealth = 1.00; a.MinQuantity = 2; a.MaxQuantity = 6;
+        general.items.Insert(a);
+
+        TR_LootEntry b = new TR_LootEntry;
+        b.type = "Matchbox"; b.weight = 25; b.MinHealth = 0.20; b.MaxHealth = 0.80; b.MinQuantity = 1; b.MaxQuantity = 12;
+        general.items.Insert(b);
+
+        TR_LootEntry c = new TR_LootEntry;
+        c.type = "DuctTape"; c.weight = 25; c.MinHealth = 0.80; c.MaxHealth = 1.00; c.MinQuantity = -1; c.MaxQuantity = -1;
+        general.items.Insert(c);
+
+        general.cooldownMessage.Insert("This spot looks like it has been recently searched.");
+        general.cooldownMessage.Insert("Fresh scuff marks - someone beat you to it.");
+        general.cooldownMessage.Insert("Too tidy. Someone picked through here already.");
+
+        defFile.groups.Insert("general", general);
+        return defFile;
+    }
+
+    protected static void _SaveTo(string path)
+    {
+        #ifdef SERVER
+        if (!s_File) return;
+        JsonFileLoader<TR_LootGroupsFile>.JsonSaveFile(path, s_File);
+        TR_Debug.Log("[LootGroups] Wrote file '" + path + "'");
+        #endif
+    }
 
 	static void Load()
 	{
-		if (!s_File) s_File = new TR_LootGroupsFile;
+		s_File = new TR_LootGroupsFile();
+		string path = TR_Constants.Path("LootGroups.json");
+        string used = path;
+		#ifndef SERVER
+			string m1 = "$mission:TenaciousRummaging\\LootGroups.json";
+			string m2 = "$mission:TenaciousRummaging/LootGroups.json";
+			if (FileExist(m1)) { used = m1; }
+			else if (FileExist(m2)) { used = m2; }
+		#endif
 
-		TR_Constants.EnsureProfile();
-		string path = TR_Constants.Path(TR_Constants.FILE_LOOT_GROUPS);
-
-		if (FileExist(path))
+		if (FileExist(used))
 		{
-			// Load from disk
-			JsonFileLoader<TR_LootGroupsFile>.JsonLoadFile(path, s_File);
-			Normalize();
-			TR_Debug.Log("LootGroups loaded: " + s_File.groups.Count().ToString() + " group(s) from file.");
-			return;
+			JsonFileLoader<TR_LootGroupsFile>.JsonLoadFile(used, s_File);
+			_BuildLowerKeyIndex();
+			int total = 0; int withPrompt = 0;
+			if (s_File && s_File.groups)
+			{
+				total = s_File.groups.Count();
+				foreach (string key2, TR_LootGroupDef gd2 : s_File.groups) {
+					if (gd2 && gd2.promptText != "") withPrompt = withPrompt + 1;
+				}
+			}
+			TR_Debug.Log("[LootGroups] Loaded file '" + used + "', counting '" + total.ToString() + "' groups and '" + withPrompt.ToString() + "' custom rummage prompts");
+			// No normalization write-back on existing files.
 		}
-
-		// Create a minimal default file the first time, to help server owners.
-		ref TR_LootGroupsFile defFile = new TR_LootGroupsFile;
-
-		ref TR_LootGroupDef general = new TR_LootGroupDef;
+		else
 		{
-			// Simple starter items
-			TR_LootEntry a = new TR_LootEntry;
-			a.type = "Rag"; a.weight = 50; a.MinHealth = 0.70; a.MaxHealth = 1.00; a.MinQuantity = 2; a.MaxQuantity = 6;
-			general.items.Insert(a);
-
-			TR_LootEntry b = new TR_LootEntry;
-			b.type = "Matchbox"; b.weight = 25; b.MinHealth = 0.20; b.MaxHealth = 0.80; b.MinQuantity = 1; b.MaxQuantity = 12;
-			general.items.Insert(b);
-
-			TR_LootEntry c = new TR_LootEntry;
-			c.type = "DuctTape"; c.weight = 25; c.MinHealth = 0.80; c.MaxHealth = 1.00; c.MinQuantity = -1; c.MaxQuantity = -1;
-			general.items.Insert(c);
-
-			general.cooldownMessage.Insert("This spot looks like it has been recently searched.");
-			general.cooldownMessage.Insert("Fresh scuff marks - someone beat you to it.");
-			general.cooldownMessage.Insert("Too tidy. Someone picked through here already.");
+			#ifdef SERVER
+			TR_Debug.Log("[LootGroups] Missing file '" + used + "', creating default");
+			s_File = _CreateDefault();
+			Normalize(); // safe to normalize defaults before first save
+			_BuildLowerKeyIndex();
+			_SaveTo(path);
+			TR_Debug.Log("[LootGroups] Default created at: " + path);
+			#else
+			TR_Debug.Log("[LootGroups] Missing file '" + used + "'");
+			#endif
 		}
+	}
 
-		defFile.groups.Insert("general", general);
-		s_File = defFile;
-
+	static void SaveManual()
+	{
+		string path = TR_Constants.Path("LootGroups.json");
+		if (!s_File || !s_File.groups || s_File.groups.Count() == 0)
+		{
+			s_File = _CreateDefault();
+		}
 		Normalize();
-		JsonFileLoader<TR_LootGroupsFile>.JsonSaveFile(path, s_File);
-		TR_Debug.Log("LootGroups default created at: " + path);
+		_BuildLowerKeyIndex();
+		_SaveTo(path);
 	}
 
 	static TR_LootEntry PickWeighted(array<ref TR_LootEntry> entries)
@@ -213,6 +288,20 @@ class TR_LootGroups
 		return s_File.groups.Get(name);
 	}
 
+	static string GetPromptText(string name)
+    {
+        TR_LootGroupDef def = Get(name);
+        if (!def && s_KeyLowerToKey)
+        {
+            string lk = _NormKey(name);
+            if (s_KeyLowerToKey.Contains(lk))
+                def = Get(s_KeyLowerToKey.Get(lk));
+        }
+        if (!def) return "";
+        if (def.promptText != "") return def.promptText;
+        return "";
+    }
+
 	static array<string> ListNames()
 	{
 		if (!s_File) Load();
@@ -220,7 +309,7 @@ class TR_LootGroups
 		array<string> names = new array<string>;
 		foreach (string k, TR_LootGroupDef def : s_File.groups) names.Insert(k);
 
-		TR_Debug.Log("LootGroups contains " + names.Count().ToString() + " group(s).");
+		TR_Debug.Log("[LootGroups] '" + names.Count().ToString() + "' group(s) accounted for");
 		return names;
 	}
 
@@ -230,7 +319,6 @@ class TR_LootGroups
 	}
 }
 
-// Resolve a concrete type from a TR_LootEntry ('type' or 'type_range')
 static string TR_ResolveLootType(TR_LootEntry e)
 {
 	if (!e) return "";

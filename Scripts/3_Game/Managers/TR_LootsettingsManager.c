@@ -16,10 +16,8 @@ class TR_LSM_ZombieSpawnEvent
     int   CountMax = 1;
     float SpawnRadius = 8.0;
     ref array<string> ZombieTypes;
-
     float AlertNoiseStrength = 50.0;
     float AlertNoiseRange = 30.0;
-
     string FlavorText;
 
     void TR_LSM_ZombieSpawnEvent()
@@ -77,7 +75,7 @@ class TR_LSM_ShockEvent
 
     void TR_LSM_ShockEvent()
     {
-        FlavorText = TR_FLAVOR_UNSET;
+    FlavorText = TR_FLAVOR_UNSET;
     }
 }
 
@@ -130,6 +128,7 @@ class TR_LootSettingsData
     float  DefaultCooldownTime = 1800;
     string CooldownScope = "Global";
     string DefaultGroup = "";
+    string DefaultPromptText = "";
 
     bool DebugMode = false;
     bool EnableCsvLogging = false;
@@ -182,31 +181,49 @@ class TR_LootSettingsManager
         s_Data = new TR_LootSettingsData();
         string path = TR_Constants.Path("LootSettings.json");
 
+        bool mutated = false;
+
         if (FileExist(path))
         {
             JsonFileLoader<TR_LootSettingsData>.JsonLoadFile(path, s_Data);
-            EnsureNotificationsBackfilled();
+
+            if (!s_Data.Notifications) { s_Data.Notifications = new TR_LSM_Notifications(); mutated = true; }
+            else
+            {
+                float nd = s_Data.Notifications.DurationSeconds;
+                if (nd < 0.5) { s_Data.Notifications.DurationSeconds = 0.5; mutated = true; }
+                if (nd > 15.0) { s_Data.Notifications.DurationSeconds = 15.0; mutated = true; }
+            }
+
             if (s_Data && s_Data.Categories)
             {
                 foreach (string k, TR_CategorySettings cs : s_Data.Categories)
                 {
-                    if (!cs.Events)
-                    {
-                        cs.Events = CreateDefaultEvents();
-                    }
+                    if (!cs.Events) { cs.Events = CreateDefaultEvents(); mutated = true; }
 
-                    if (cs.CooldownTime <= 0) cs.CooldownTime = s_Data.DefaultCooldownTime;
-                    if (cs.GloveDamageMin < 0) cs.GloveDamageMin = 0;
-                    if (cs.GloveDamageMax < cs.GloveDamageMin) cs.GloveDamageMax = cs.GloveDamageMin;
-                    if (cs.HazardChance < 0.0) cs.HazardChance = 0.0;
-                    if (cs.HazardChance > 1.0) cs.HazardChance = 1.0;
+                    if (cs.CooldownTime <= 0) { cs.CooldownTime = s_Data.DefaultCooldownTime; mutated = true; }
+                    if (cs.GloveDamageMin < 0) { cs.GloveDamageMin = 0; mutated = true; }
+                    if (cs.GloveDamageMax < 0) { cs.GloveDamageMax = 0; mutated = true; }
+                    if (cs.GloveDamageMax < cs.GloveDamageMin) { cs.GloveDamageMax = cs.GloveDamageMin; mutated = true; }
+                    if (cs.HazardChance < 0.0) { cs.HazardChance = 0.0; mutated = true; }
+                    if (cs.HazardChance > 1.0) { cs.HazardChance = 1.0; mutated = true; }
+
+                    mutated = EnsureCategoryBackfilled(cs) || mutated;
                 }
+            }
+
+            if (mutated)
+            {
+                JsonFileLoader<TR_LootSettingsData>.JsonSaveFile(path, s_Data);
+                TR_Debug.Warn("[LootSettings] Backfill detected; wrote updated LootSettings.json");
             }
         }
         else
         {
             SaveManual(s_Data);
         }
+
+        ValidateGroups();
     }
 
     static void SaveManual(TR_LootSettingsData data)
@@ -224,7 +241,15 @@ class TR_LootSettingsManager
             gen.Events = CreateDefaultEvents();
             data.Categories.Set("general", gen);
 
+            TR_CategorySettings misc = new TR_CategorySettings();
+            misc.CooldownTime = 1800;
+            misc.GloveDamageMin = 5;
+            misc.GloveDamageMax = 15;
+            misc.Events = CreateDefaultEvents();
+            data.Categories.Set("misc", misc);
+
             data.DefaultCooldownTime = 1800;
+            data.DefaultPromptText = "Rummage here for loot";
             data.CooldownScope = "Global";
             data.DefaultGroup  = "general";
             data.DebugMode = false;
@@ -234,6 +259,14 @@ class TR_LootSettingsManager
         if (!data.Notifications)
         {
             data.Notifications = new TR_LSM_Notifications();
+        }
+        data.Notifications.Enabled = true;
+        data.Notifications.EnableToastIcon = 1;
+        if (data.Notifications.DurationSeconds < 0.5) data.Notifications.DurationSeconds = 5.0;
+
+        foreach (string ck, TR_CategorySettings cs2 : data.Categories)
+        {
+            EnsureCategoryBackfilled(cs2);
         }
 
         JsonFileLoader<TR_LootSettingsData>.JsonSaveFile(path, data);
@@ -249,40 +282,185 @@ class TR_LootSettingsManager
         ev.ZombieSpawn.SpawnRadius = 12.0;
         ev.ZombieSpawn.AlertNoiseStrength = 50.0;
         ev.ZombieSpawn.AlertNoiseRange = 30.0;
-        ev.ZombieSpawn.FlavorText = "Your rummaging makes too much noise; nearby Infected are alerted and start hunting you.";
+        ev.ZombieSpawn.FlavorText = "Your rummaging makes a lot of noise and draws immediate attention from nearby infected!";
 
         ev.Smoke.Chance = 0.0;
         ev.Smoke.Classname = "M18SmokeGrenade_Red";
         ev.Smoke.FuseSeconds = 1.0;
-        ev.Smoke.FlavorText = "You jostle the stash; a smoke grenade pops.";
+        ev.Smoke.FlavorText = "You jostle the stash and a smoke grenade hisses, flooding the area!";
 
         ev.Gas.Chance = 0.0;
         ev.Gas.Classname = "Grenade_ChemGas";
         ev.Gas.FuseSeconds = 1.0;
-        ev.Gas.FlavorText = "A toxic canister vents gas.";
+        ev.Gas.FlavorText = "You disturb the cache and a toxic canister pops, releasing choking gas!";
 
         ev.KnockOut.Chance = 0.0;
         ev.KnockOut.DurationSeconds = 12.0;
         ev.KnockOut.HealthDamage = 25.0;
-        ev.KnockOut.FlavorText = "A nasty hit knocks you out.";
+        ev.KnockOut.FlavorText = "A heavy hit staggers you and you collapse unconscious..";
 
         ev.Shock.Chance = 0.0;
         ev.Shock.ShockAmount = 50.0;
         ev.Shock.HealthDamage = 25.0;
-        ev.Shock.FlavorText = "A jolt of electricity hurts.";
+        ev.Shock.FlavorText = "A surge of electricity tears through you. Your muscles seize!";
 
         ev.SirenAlarm.Chance = 0.0;
-        ev.SirenAlarm.FlavorText = "A siren blares in the distance.";
+        ev.SirenAlarm.FlavorText = "An air-raid siren blares across the area!";
 
         return ev;
     }
 
-    static void EnsureNotificationsBackfilled()
+    static bool EnsureCategoryBackfilled(TR_CategorySettings cs)
+    {
+        bool mutated = false;
+
+        if (!cs.Events)
+        {
+            cs.Events = CreateDefaultEvents();
+            mutated = true;
+        }
+        else
+        {
+            mutated = BackfillEvents(cs.Events) || mutated;
+        }
+
+        return mutated;
+    }
+
+    static bool BackfillEvents(TR_LSM_Events ev)
+    {
+        if (!ev) return false;
+
+        bool mutated = false;
+
+        bool createdZ = false;
+        if (!ev.ZombieSpawn) { ev.ZombieSpawn = new TR_LSM_ZombieSpawnEvent(); createdZ = true; mutated = true; }
+        if (createdZ)
+        {
+            ev.ZombieSpawn.CountMin = 1;
+            ev.ZombieSpawn.CountMax = 2;
+            ev.ZombieSpawn.SpawnRadius = 12.0;
+            ev.ZombieSpawn.AlertNoiseStrength = 50.0;
+            ev.ZombieSpawn.AlertNoiseRange = 30.0;
+            ev.ZombieSpawn.FlavorText = "Your rummaging makes a lot of noise and draws immediate attention from nearby infected!";
+        }
+        else
+        {
+            if (ev.ZombieSpawn.FlavorText == TR_FLAVOR_UNSET || ev.ZombieSpawn.FlavorText == "")
+            {
+                ev.ZombieSpawn.FlavorText = "Your rummaging makes a lot of noise and draws immediate attention from nearby infected!";
+                mutated = true;
+            }
+        }
+
+        bool createdS = false;
+        if (!ev.Smoke) { ev.Smoke = new TR_LSM_SmokeEvent(); createdS = true; mutated = true; }
+        if (createdS)
+        {
+            ev.Smoke.Classname = "M18SmokeGrenade_Red";
+            ev.Smoke.FuseSeconds = 1.0;
+            ev.Smoke.FlavorText = "You jostle the stash and a smoke grenade hisses, flooding the area!";
+        }
+        else
+        {
+            if (ev.Smoke.FlavorText == TR_FLAVOR_UNSET || ev.Smoke.FlavorText == "")
+            {
+                ev.Smoke.FlavorText = "You jostle the stash and a smoke grenade hisses, flooding the area!";
+                mutated = true;
+            }
+        }
+
+        bool createdG = false;
+        if (!ev.Gas) { ev.Gas = new TR_LSM_GasEvent(); createdG = true; mutated = true; }
+        if (createdG)
+        {
+            ev.Gas.Classname = "Grenade_ChemGas";
+            ev.Gas.FuseSeconds = 1.0;
+            ev.Gas.FlavorText = "You disturb the cache and a toxic canister pops, releasing choking gas!";
+        }
+        else
+        {
+            if (ev.Gas.FlavorText == TR_FLAVOR_UNSET || ev.Gas.FlavorText == "")
+            {
+                ev.Gas.FlavorText = "You disturb the cache and a toxic canister pops, releasing choking gas!";
+                mutated = true;
+            }
+        }
+
+        bool createdKO = false;
+        if (!ev.KnockOut) { ev.KnockOut = new TR_LSM_KnockOutEvent(); createdKO = true; mutated = true; }
+        if (createdKO)
+        {
+            ev.KnockOut.DurationSeconds = 12.0;
+            ev.KnockOut.HealthDamage = 25.0;
+            ev.KnockOut.FlavorText = "A heavy hit staggers you and you collapse unconscious..";
+        }
+        else
+        {
+            if (ev.KnockOut.FlavorText == TR_FLAVOR_UNSET || ev.KnockOut.FlavorText == "")
+            {
+                ev.KnockOut.FlavorText = "A heavy hit staggers you and you collapse unconscious..";
+                mutated = true;
+            }
+        }
+
+        bool createdSh = false;
+        if (!ev.Shock) { ev.Shock = new TR_LSM_ShockEvent(); createdSh = true; mutated = true; }
+        if (createdSh)
+        {
+            ev.Shock.ShockAmount = 50.0;
+            ev.Shock.HealthDamage = 25.0;
+            ev.Shock.FlavorText = "A surge of electricity tears through you. Your muscles seize!";
+        }
+        else
+        {
+            if (ev.Shock.FlavorText == TR_FLAVOR_UNSET || ev.Shock.FlavorText == "")
+            {
+                ev.Shock.FlavorText = "A surge of electricity tears through you. Your muscles seize!";
+                mutated = true;
+            }
+        }
+
+        bool createdSi = false;
+        if (!ev.SirenAlarm) { ev.SirenAlarm = new TR_LSM_SirenAlarmEvent(); createdSi = true; mutated = true; }
+        if (createdSi)
+        {
+            ev.SirenAlarm.FlavorText = "An air-raid siren blares across the area!";
+        }
+        else
+        {
+            if (ev.SirenAlarm.FlavorText == TR_FLAVOR_UNSET || ev.SirenAlarm.FlavorText == "")
+            {
+                ev.SirenAlarm.FlavorText = "An air-raid siren blares across the area!";
+                mutated = true;
+            }
+        }
+
+        return mutated;
+    }
+
+    static void ValidateGroups()
     {
         if (!s_Data) return;
-        if (!s_Data.Notifications)
+
+        array<string> groups = TR_LootGroups.GetAllGroupNames();
+        foreach (string g : groups)
         {
-            s_Data.Notifications = new TR_LSM_Notifications();
+            if (!s_Data.Categories || !s_Data.Categories.Contains(g))
+            {
+                TR_Debug.Warn("[LootSettings] LootSettings.json missing settings for group '" + g + "'. Using defaults.");
+            }
+        }
+
+        if (s_Data.Categories)
+        {
+            foreach (string key, TR_CategorySettings settings : s_Data.Categories)
+            {
+                if (!groups.Find(key))
+                {
+                    TR_Debug.Warn("[LootSettings] LootSettings.json defines category '" + key + "' which has no matching loot group in LootGroups.json.");
+                }
+            }
         }
     }
 
@@ -352,5 +530,92 @@ class TR_LootSettingsManager
         if (span <= 0) return dmin;
 
         return dmin + Math.RandomInt(0, span);
+    }
+
+    static string GetDefaultPromptText()
+    {
+        EnsureLoaded();
+        if (GetGame() && (GetGame().IsClient() || !GetGame().IsMultiplayer()))
+        {
+            string cd = TR_GroupPromptsClient.GetDefault();
+            if (cd != "") return cd;
+        }
+        if (!s_Data) return "";
+        return s_Data.DefaultPromptText;
+    }
+
+    static string ResolvePromptText(string nodePrompt, string lootGroup, out string outSource)
+    {
+        string lootGroupNorm = lootGroup;
+        if (lootGroupNorm != "")
+        {
+            lootGroupNorm.Trim();
+        }
+
+        EnsureLoaded();
+        string txt = "";
+        outSource = "Fallback";
+
+        if (nodePrompt != "")
+        {
+            outSource = "Node";
+            txt = nodePrompt;
+        }
+        else
+        {
+            string gp = "";
+            if (lootGroupNorm != "")
+            {
+                if (GetGame() && (GetGame().IsClient() || !GetGame().IsMultiplayer()))
+                {
+                    gp = TR_GroupPromptsClient.GetGroupPrompt(lootGroupNorm);
+                    if (gp == "")
+                    {
+                        gp = TR_LootGroups.GetPromptText(lootGroupNorm);
+                    }
+                }
+                else
+                {
+                    gp = TR_LootGroups.GetPromptText(lootGroupNorm);
+                }
+            }
+
+            if (gp != "")
+            {
+                outSource = "Group";
+                txt = gp;
+            }
+            else
+            {
+                string dp = "";
+                if (GetGame() && (GetGame().IsClient() || !GetGame().IsMultiplayer()))
+                {
+                    dp = TR_GroupPromptsClient.GetDefault();
+                    if (dp == "" && s_Data)
+                    {
+                        dp = s_Data.DefaultPromptText;
+                    }
+                }
+                else if (s_Data)
+                {
+                    dp = s_Data.DefaultPromptText;
+                }
+
+                if (dp != "")
+                {
+                    outSource = "Default";
+                    txt = dp;
+                }
+                else
+                {
+                    outSource = "Fallback";
+                    txt = TR_Constants.DEFAULT_RUMMAGE_PROMPT;
+                }
+            }
+        }
+
+        int maxLen = 56;
+        if (txt.Length() > maxLen) txt = txt.Substring(0, maxLen);
+        return txt;
     }
 }

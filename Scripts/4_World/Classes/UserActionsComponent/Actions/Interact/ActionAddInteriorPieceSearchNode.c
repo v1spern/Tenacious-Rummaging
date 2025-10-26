@@ -1,4 +1,4 @@
-// Add Interior Node (cursor-targeted admin add; proxy-only gating; persists on parent building)
+// Action: Add Interior SearchNode
 
 class ActionAddInteriorPieceSearchNode : ActionInteractBase
 {
@@ -11,7 +11,6 @@ class ActionAddInteriorPieceSearchNode : ActionInteractBase
 
 	override void CreateConditionComponents()
 	{
-		// Use the actual cursor hit object
 		m_ConditionTarget = new CCTCursor(UAMaxDistances.DEFAULT);
 		m_ConditionItem   = new CCINone;
 	}
@@ -25,12 +24,10 @@ class ActionAddInteriorPieceSearchNode : ActionInteractBase
 	{
 		if (!player || !target) return false;
 
-		// Require admin stone in hands
 		ItemBase inHands = ItemBase.Cast(player.GetItemInHands());
 		if (!inHands) return false;
 		if (!inHands.IsKindOf("TR_AdminStone") && !inHands.IsKindOf("AdminStone")) return false;
 
-		// Proxy-aware gating (no selection lists, proxies only)
 		return TR_Interior.CanAdminAdd(player, target);
 	}
 
@@ -47,9 +44,8 @@ class ActionAddInteriorPieceSearchNode : ActionInteractBase
 		PlayerBase pb = PlayerBase.Cast(action_data.m_Player);
 		if (!pb) return;
 
-		// Persist under building parent; default group "general"
 		string msg = TR_Interior.AdminAddFromCursor(pb, action_data.m_Target, "general");
 		if (msg == "") msg = "[AddInterior] Failed to add interior token.";
-		TR_Notify.Send(msg);
+		TR_Notify.Send(pb, msg);
 	}
 }

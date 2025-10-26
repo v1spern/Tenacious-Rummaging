@@ -73,7 +73,7 @@ class TR_RummageEvent_KnockOut
         DurationSeconds = 10.0;
         HealthDamage = 25.0;
 
-        FlavorText = "A heavy hit staggers you and you collapse unconscious.";
+        FlavorText = "A heavy hit staggers you and you collapse unconscious..";
     }
 }
 
@@ -163,7 +163,7 @@ class TR_RummageEventManager
         string path = "$profile:TenaciousRummaging/LootSettings.json";
         if (!FileExist(path))
         {
-            TR_Debug.Log("[RummageEventManager] LootSettings.json not found; events disabled.");
+            TR_Debug.Error("[RummageEventManager] LootSettings.json not found; events disabled.");
             return;
         }
 
@@ -172,7 +172,7 @@ class TR_RummageEventManager
 
         if (!tmp || !tmp.Categories)
         {
-            TR_Debug.Log("[RummageEventManager] LootSettings.json has no Categories; events disabled.");
+            TR_Debug.Error("[RummageEventManager] LootSettings.json has no Categories; events disabled.");
             return;
         }
 
@@ -263,7 +263,7 @@ class TR_RummageEventManager
             }
         }
 
-        TR_Debug.Log("[RummageEvent] AggroExistingInfectedNear affected=" + affected.ToString() + " range=" + range.ToString() + " pos=" + VecToShortStr(atPos));
+        TR_Debug.Log("[RummageEvent] AggroExistingInfectedNear affected='" + affected.ToString() + "' range='" + range.ToString() + "' pos='" + VecToShortStr(atPos) + "'.");
     }
 
     protected static void PlayZombieAlertSound(PlayerBase player, vector soundPos)
@@ -375,7 +375,7 @@ class TR_RummageEventManager
             }
         }
 
-        TR_Debug.Log("[RummageEvent] BroadcastAudioInRange kind=" + kind.ToString() + " radius=" + radiusM.ToString() + " sent=" + sent.ToString());
+        TR_Debug.Log("[RummageEvent] BroadcastAudioInRange kind='" + kind.ToString() + "' radius='" + radiusM.ToString() + "' sent='" + sent.ToString() + "'.");
     }
 
     // Siren SFX
@@ -431,7 +431,7 @@ class TR_RummageEventManager
                 {
                     GetGame().ObjectDelete(obj);
                 }
-                TR_Debug.Log("[RummageEvent] ZombieSpawn FAIL type=" + ztype + " pos=" + VecToShortStr(sp));
+                TR_Debug.Log("[RummageEvent] FAILED 'ZombieSpawn': type='" + ztype + "' at pos='" + VecToShortStr(sp) + "' failed to spawn properly.");
                 continue;
             }
 
@@ -452,7 +452,7 @@ class TR_RummageEventManager
 
         if (spawned <= 0)
         {
-            TR_Debug.Log("[RummageEvent] ZombieSpawn: no infected created pos=" + VecToShortStr(pos));
+            TR_Debug.Log("[RummageEvent] FAILED 'ZombieSpawn': no infected created for player='" + GetPlayerNameSafe(player) + "' at pos=" + VecToShortStr(pos) + "'. Wrong definition in LootSettings.json?");
             return;
         }
 
@@ -474,7 +474,7 @@ class TR_RummageEventManager
             TR_Notify.Send(player, cfg.FlavorText);
         }
 
-        TR_Debug.Log("[RummageEvent] TRIGGER ZombieSpawn count=" + spawned.ToString() + " radius=" + cfg.SpawnRadius.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(pos));
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'ZombieSpawn' for player='" + GetPlayerNameSafe(player) + "': count='" + spawned.ToString() + "' radius='" + cfg.SpawnRadius.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + " pos=" + VecToShortStr(pos) + "'.");
     }
 
     protected static void TrySmoke(PlayerBase player, vector pos, TR_RummageEvent_Smoke cfg)
@@ -498,7 +498,7 @@ class TR_RummageEventManager
                 {
                     TR_Notify.Send(player, cfg.FlavorText);
                 }
-                TR_Debug.Log("[RummageEvent] TRIGGER Smoke class=" + cfg.Classname + " fuse_s=" + cfg.FuseSeconds.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(sp));
+                TR_Debug.Log("[RummageEvent] TRIGGERED 'Smoke' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
             }
         }
     }
@@ -525,7 +525,7 @@ class TR_RummageEventManager
             {
                 TR_Notify.Send(player, cfg.FlavorText);
             }
-            TR_Debug.Log("[RummageEvent] TRIGGER Gas(RUIN) class=" + cfg.Classname + " fuse_s=" + cfg.FuseSeconds.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(sp));
+            TR_Debug.Log("[RummageEvent] TRIGGERED 'PoisonGas' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
         }
     }
 
@@ -533,7 +533,7 @@ class TR_RummageEventManager
     {
         if (!p) return;
         p.AddHealth("", "Shock", amount);
-        TR_Debug.Log("[RummageEvent] KnockOut RECOVER amount=" + amount.ToString() + " player=" + GetPlayerNameSafe(p) + " pos=" + VecToShortStr(p.GetPosition()));
+        TR_Debug.Log("[RummageEvent] RECOVER player='" + GetPlayerNameSafe(p) + "': KnockOut amount='" + amount.ToString() + "' pos='" + VecToShortStr(p.GetPosition()) + "'.");
     }
 
     protected static void TryKnockOut(PlayerBase player, TR_RummageEvent_KnockOut cfg)
@@ -566,7 +566,7 @@ class TR_RummageEventManager
         if (ms < 1000) ms = 1000;
         GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(RestoreShock, ms, false, player, drop);
 
-        TR_Debug.Log("[RummageEvent] TRIGGER KnockOut player=" + GetPlayerNameSafe(player) + " KO_drop=" + drop.ToString() + " hp_dmg=" + hpDmg.ToString() + " duration_s=" + cfg.DurationSeconds.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(player.GetPosition()));
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'KnockOut' for player='" + GetPlayerNameSafe(player) + "': KO_drop='" + drop.ToString() + "' hp_dmg='" + hpDmg.ToString() + "' duration_s='" + cfg.DurationSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(player.GetPosition()) + "'.");
     }
 
     // Shock
@@ -596,7 +596,7 @@ class TR_RummageEventManager
             TR_Notify.Send(player, cfg.FlavorText);
         }
 
-        TR_Debug.Log("[RummageEvent] TRIGGER Shock player=" + GetPlayerNameSafe(player) + " shock=" + shockAmt.ToString() + " hp_dmg=" + hpDmg.ToString() + " chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(player.GetPosition()));
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'Shock' for player='" + GetPlayerNameSafe(player) + "': shock='" + shockAmt.ToString() + "' hp_dmg='" + hpDmg.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(player.GetPosition()) + "'.");
     }
 
     // Siren
@@ -615,7 +615,7 @@ class TR_RummageEventManager
             TR_Notify.Send(player, cfg.FlavorText);
         }
 
-        TR_Debug.Log("[RummageEvent] TRIGGER SirenAlarm chance=" + cfg.Chance.ToString() + " roll=" + roll.ToString() + " pos=" + VecToShortStr(soundPos));
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'SirenAlarm' for player='" + GetPlayerNameSafe(player) + "': chance='" + cfg.Chance.ToString() + " roll='" + roll.ToString() + "' pos='" + VecToShortStr(soundPos) + "'.");
     }
 
     protected static TR_RummageEventConfig GetEventsForCategory(string category)
@@ -636,7 +636,7 @@ class TR_RummageEventManager
         if (!ev) return;
 
         string pname = GetPlayerNameSafe(player);
-        TR_Debug.Log("[RummageEvent] EVALUATE player=" + pname + " category=" + category + " pos=" + VecToShortStr(atPos));
+        TR_Debug.Log("[RummageEvent] EVALUATE EVENT running for player='" + pname + "' category='" + category + "' pos='" + VecToShortStr(atPos) + "'.");
 
         if (ev.ZombieSpawn) TryZombieSpawn(player, atPos, ev.ZombieSpawn);
         if (ev.Smoke)       TrySmoke(player, atPos, ev.Smoke);

@@ -22,7 +22,7 @@ class CfgMods
         name = "Tenacious Rummaging";
         author = "v1sper";
         authorID = "76561197992870768";
-        version = "1.0.4b-dev";
+        version = "1.1.0";
         type = "mod";
 
         dependencies[] = {"Game","World","Mission"};

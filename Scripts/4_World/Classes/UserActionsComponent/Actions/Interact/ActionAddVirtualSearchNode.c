@@ -5,7 +5,6 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
     void TR_ActionAddVirtualSearchNode()
     {
         TR_Debug.Log("[Virtual Node Add] TR_ActionAddVirtualSearchNode LOADED (namespaced, parent-aware=True)");
-
         m_Text       = "Add virtual interior node";
         m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
         m_StanceMask = DayZPlayerConstants.STANCEMASK_ALL;
@@ -13,7 +12,6 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 
     override void CreateConditionComponents()
     {
-        // Get a real cursor hit when possible (proxies or mesh); if no hit, we still allow via proximity fallback.
         m_ConditionTarget = new CCTCursorParent;
         m_ConditionItem   = new CCINone;
     }
@@ -37,7 +35,7 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
         Building b = ResolveBuildingFromTargetOrNear(pb, action_data.m_Target, 6.0);
         if (!b)
         {
-            TR_Notify.Send("[Virtual Node Add] No valid building found nearby.");
+            TR_Notify.Send(pb, "[Virtual Node Add] No valid building found nearby.");
             return;
         }
 
@@ -48,7 +46,7 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 
         TR_SearchNodesDb.AddInteriorPieceNode(buildingKey, token, "general", "virtual");
 
-        TR_Notify.Send("[Virtual Node Add] Added: " + buildingKey + " @ " + token + " [virtual]");
+        TR_Notify.Send(pb, "[Virtual Node Add] Added: " + buildingKey + " @ " + token + " [virtual]");
         TR_Debug.Log("[AddVirtualNode] Adding -> class=" + buildingKey + " @" + token + " label=virtual");
     }
 
@@ -70,19 +68,19 @@ class TR_ActionAddVirtualSearchNode : ActionInteractBase
 
     protected Building FindBuildingAncestor(Object start)
     {
-    	if (!start) return null;
-    	Object cur = start;
-    	int hops = 0;
-    	while (cur && hops < 32)
-    	{
-    		Building b;
-    		if (Class.CastTo(b, cur)) return b;
-    		cur = cur.GetParent();
-    		hops++;
-    	}
-    	return null;
+        if (!start) return null;
+        Object cur = start;
+        int hops = 0;
+        while (cur && hops < 32)
+        {
+            Building b;
+            if (Class.CastTo(b, cur)) return b;
+            cur = cur.GetParent();
+            hops++;
+        }
+        return null;
     }
-    
+
     protected Building FindNearestBuildingWithin(PlayerBase player, float radius)
     {
         if (!player) return null;

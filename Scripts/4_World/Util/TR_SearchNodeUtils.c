@@ -25,9 +25,6 @@ class TR_SearchNodeUtils
         {
             if (allowed)
                 TR_Debug.Log("[Util] CanSearchNode = TRUE, key = '" + normKey + "'");
-            else
-                TR_Debug.Log("[Util] CanSearchNode = FALSE, key = '" + normKey + "'");
-
             s_LastKey = normKey;
             s_LastAllowed = allowed;
             s_LastPrintMs = now;
