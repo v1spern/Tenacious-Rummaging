@@ -129,6 +129,7 @@ class TR_LootSettingsData
     string CooldownScope = "Global";
     string DefaultGroup = "";
     string DefaultPromptText = "";
+    string NothingFoundText = "";
 
     bool DebugMode = false;
     bool EnableCsvLogging = false;
@@ -186,6 +187,7 @@ class TR_LootSettingsManager
         if (FileExist(path))
         {
             JsonFileLoader<TR_LootSettingsData>.JsonLoadFile(path, s_Data);
+            if (s_Data.NothingFoundText == "") { s_Data.NothingFoundText = "You found nothing."; mutated = true; }
 
             if (!s_Data.Notifications) { s_Data.Notifications = new TR_LSM_Notifications(); mutated = true; }
             else
@@ -250,6 +252,7 @@ class TR_LootSettingsManager
 
             data.DefaultCooldownTime = 1800;
             data.DefaultPromptText = "Rummage here for loot";
+            data.NothingFoundText = "You found nothing.";
             data.CooldownScope = "Global";
             data.DefaultGroup  = "general";
             data.DebugMode = false;
@@ -268,6 +271,8 @@ class TR_LootSettingsManager
         {
             EnsureCategoryBackfilled(cs2);
         }
+
+        if (data.NothingFoundText == "") data.NothingFoundText = "You found nothing.";
 
         JsonFileLoader<TR_LootSettingsData>.JsonSaveFile(path, data);
     }
@@ -542,6 +547,15 @@ class TR_LootSettingsManager
         }
         if (!s_Data) return "";
         return s_Data.DefaultPromptText;
+    }
+
+    static string GetNothingFoundText()
+    {
+        EnsureLoaded();
+        if (!s_Data) return "You found nothing.";
+        string t = s_Data.NothingFoundText;
+        if (t == "") return "You found nothing.";
+        return t;
     }
 
     static string ResolvePromptText(string nodePrompt, string lootGroup, out string outSource)

@@ -285,7 +285,7 @@ class ActionSearchNode : ActionContinuousBase
 		if (roll01 > attemptFrac)
 		{
 			TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "FAIL", 0, "");
-			TR_Notify.Send(player, "You found nothing.");
+			TR_Notify.Send(player, TR_LootSettingsManager.GetNothingFoundText());
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
 			return;
@@ -353,7 +353,7 @@ class ActionSearchNode : ActionContinuousBase
 		if (spawnedCount == 0)
 		{
 			TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "FAIL", 0, "");
-			TR_Notify.Send(player, "You found nothing.");
+			TR_Notify.Send(player, TR_LootSettingsManager.GetNothingFoundText());
 			TR_RummageEventManager.TriggerOnFailedRummage(player, lootCategory, player.GetPosition());
 			TryApplySearchHazard(player, lootCategory);
 		}

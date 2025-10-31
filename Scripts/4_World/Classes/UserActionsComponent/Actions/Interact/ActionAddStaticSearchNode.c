@@ -129,12 +129,12 @@ class ActionAddStaticSearchNode : ActionInteractBase
 
         string defGroup = TR_LootSettingsManager.GetDefaultGroup();
 
-        string msg = "Added static node: " + className;
+        string msg = "Added static node '" + className + "' to group '" + defGroup + "'";
         if (modelName != "") msg += " (model: " + modelName + ")";
         msg += " @" + pos.ToString();
         if (defGroup != "") msg += " [" + defGroup + "]";
         TR_Notify.Send(player, msg);
 
-        TR_Debug.Log("ADD-STATIC -> class=" + className + " model=" + modelName + " @ " + pos.ToString() + " group=" + defGroup);
+        TR_Debug.Log("[AddNode] Type: Static - class '" + className + "', model '" + modelName + "' @ '" + pos.ToString() + "' group '" + defGroup + "'");
     }
 }
