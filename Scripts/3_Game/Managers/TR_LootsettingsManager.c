@@ -130,6 +130,10 @@ class TR_LootSettingsData
     string DefaultGroup = "";
     string DefaultPromptText = "";
     string NothingFoundText = "";
+    string LootFoundText = "";
+    string HazardScrapeText = "";
+    string HazardRuinedGlovesText = "";
+    string HazardNoGlovesText = "";
 
     bool DebugMode = false;
     bool EnableCsvLogging = false;
@@ -189,6 +193,11 @@ class TR_LootSettingsManager
             JsonFileLoader<TR_LootSettingsData>.JsonLoadFile(path, s_Data);
             if (s_Data.NothingFoundText == "") { s_Data.NothingFoundText = "You found nothing."; mutated = true; }
 
+            if (s_Data.LootFoundText == "") { s_Data.LootFoundText = "You find some stuff and put it beside you on the ground. (Items: {count})"; mutated = true; }
+            if (s_Data.HazardScrapeText == "") { s_Data.HazardScrapeText = "Your hands get scraped but your gloves take the hit."; mutated = true; }
+            if (s_Data.HazardRuinedGlovesText == "") { s_Data.HazardRuinedGlovesText = "Your ruined gloves fail to protect you. You cut yourself while rummaging!"; mutated = true; }
+            if (s_Data.HazardNoGlovesText == "") { s_Data.HazardNoGlovesText = "You cut yourself while rummaging!"; mutated = true; }
+
             if (!s_Data.Notifications) { s_Data.Notifications = new TR_LSM_Notifications(); mutated = true; }
             else
             {
@@ -207,8 +216,9 @@ class TR_LootSettingsManager
                     if (cs.GloveDamageMin < 0) { cs.GloveDamageMin = 0; mutated = true; }
                     if (cs.GloveDamageMax < 0) { cs.GloveDamageMax = 0; mutated = true; }
                     if (cs.GloveDamageMax < cs.GloveDamageMin) { cs.GloveDamageMax = cs.GloveDamageMin; mutated = true; }
+                    if (cs.HazardChance > 0.0 && cs.HazardChance <= 1.0) { cs.HazardChance = cs.HazardChance * 100.0; mutated = true; }
                     if (cs.HazardChance < 0.0) { cs.HazardChance = 0.0; mutated = true; }
-                    if (cs.HazardChance > 1.0) { cs.HazardChance = 1.0; mutated = true; }
+                    if (cs.HazardChance > 100.0) { cs.HazardChance = 100.0; mutated = true; }
 
                     mutated = EnsureCategoryBackfilled(cs) || mutated;
                 }
@@ -273,6 +283,10 @@ class TR_LootSettingsManager
         }
 
         if (data.NothingFoundText == "") data.NothingFoundText = "You found nothing.";
+        if (data.LootFoundText == "") data.LootFoundText = "You find some stuff and put it beside you on the ground. (Items: {count})";
+        if (data.HazardScrapeText == "") data.HazardScrapeText = "Your hands get scraped but your gloves take the hit.";
+        if (data.HazardRuinedGlovesText == "") data.HazardRuinedGlovesText = "Your ruined gloves fail to protect you. You cut yourself while rummaging!";
+        if (data.HazardNoGlovesText == "") data.HazardNoGlovesText = "You cut yourself while rummaging!";
 
         JsonFileLoader<TR_LootSettingsData>.JsonSaveFile(path, data);
     }
@@ -509,8 +523,9 @@ class TR_LootSettingsManager
         if (s_Data.Categories && s_Data.Categories.Contains(groupName))
         {
             float c = s_Data.Categories.Get(groupName).HazardChance;
+            if (c > 0.0 && c <= 1.0) c = c * 100.0;
             if (c < 0.0) return 0.0;
-            if (c > 1.0) return 1.0;
+            if (c > 100.0) return 100.0;
             return c;
         }
         return 0.0;
@@ -558,7 +573,65 @@ class TR_LootSettingsManager
         return t;
     }
 
-    static string ResolvePromptText(string nodePrompt, string lootGroup, out string outSource)
+        static string ReplaceAll(string s, string find, string repl)
+    {
+        if (find == "") return s;
+        int pos = s.IndexOf(find);
+        while (pos != -1)
+        {
+            string left = s.Substring(0, pos);
+            int start = pos + find.Length();
+            int remaining = s.Length() - start;
+            if (remaining < 0) remaining = 0;
+            string right = s.Substring(start, remaining);
+            s = left + repl + right;
+            pos = s.IndexOf(find);
+        }
+        return s;
+    }
+
+    static string GetLootFoundText(int count)
+    {
+        EnsureLoaded();
+        string t = "";
+        if (s_Data) t = s_Data.LootFoundText;
+        if (t == "") t = "You find some stuff and put it beside you on the ground. (Items: {count})";
+        string c = count.ToString();
+        t = ReplaceAll(t, "{count}", c);
+        t = ReplaceAll(t, "{COUNT}", c);
+        t = ReplaceAll(t, "%COUNT%", c);
+        t = ReplaceAll(t, "%count%", c);
+        return t;
+    }
+
+    static string GetHazardScrapeText()
+    {
+        EnsureLoaded();
+        if (!s_Data) return "Your hands get scraped but your gloves take the hit.";
+        string t = s_Data.HazardScrapeText;
+        if (t == "") t = "Your hands get scraped but your gloves take the hit.";
+        return t;
+    }
+
+    static string GetHazardRuinedGlovesCutText()
+    {
+        EnsureLoaded();
+        if (!s_Data) return "Your ruined gloves fail to protect you. You cut yourself while rummaging!";
+        string t = s_Data.HazardRuinedGlovesText;
+        if (t == "") t = "Your ruined gloves fail to protect you. You cut yourself while rummaging!";
+        return t;
+    }
+
+    static string GetHazardNoGlovesCutText()
+    {
+        EnsureLoaded();
+        if (!s_Data) return "You cut yourself while rummaging!";
+        string t = s_Data.HazardNoGlovesText;
+        if (t == "") t = "You cut yourself while rummaging!";
+        return t;
+    }
+
+static string ResolvePromptText(string nodePrompt, string lootGroup, out string outSource)
     {
         string lootGroupNorm = lootGroup;
         if (lootGroupNorm != "")

@@ -362,7 +362,7 @@ class ActionSearchNode : ActionContinuousBase
 			string itemsCsv = TR_ASN_JoinCSV(spawnedTypes);
 			string __src; string __np3 = ""; string __lg3 = lootCategory; TR_SearchNode __def3b = TR_SearchNodesDb.Match(usedObj); if (__def3b) { if (__def3b.PromptText != "") __np3 = __def3b.PromptText; if (__def3b.LootGroup != "") __lg3 = __def3b.LootGroup; } string __pt = TR_LootSettingsManager.ResolvePromptText(__np3, __lg3, __src); PlayerIdentity __pid = player.GetIdentity(); string __nm = ""; if (__pid) __nm = __pid.GetName(); TR_Debug.Log("[PromptText] player=" + __nm + " level=" + __src + " group=" + lootCategory + " text='" + __pt + "'");
             TR_ASN_LogSummary(player, usedObj, cooldownKey, lootCategory, attemptPct, rollPct, "SUCCESS", spawnedCount, itemsCsv);
-			TR_Notify.Send(player, "You find some stuff and put it beside you on the ground. (Items: " + spawnedCount.ToString() + ")");
+			TR_Notify.Send(player, TR_LootSettingsManager.GetLootFoundText(spawnedCount));
 			PlayLootFoundClientOrRPC(player);
 			TryApplySearchHazard(player, lootCategory);
 		}
@@ -373,7 +373,7 @@ class ActionSearchNode : ActionContinuousBase
 		float chance = TR_LootSettingsManager.GetHazardChanceForCategory(category);
 		if (chance <= 0.0) return;
 
-		float roll = Math.RandomFloat01();
+		float roll = Math.RandomFloatInclusive(0.0, 100.0);
 		if (roll > chance) return;
 
 		ItemBase gloves = GetPlayerGloves(player);
@@ -387,17 +387,17 @@ class ActionSearchNode : ActionContinuousBase
 				if (dmg > 0)
 				{
 					gloves.AddHealth("", "", -dmg);
-					TR_Notify.Send(player, "Your hands get scraped but your gloves take the hit.");
+					TR_Notify.Send(player, TR_LootSettingsManager.GetHazardScrapeText());
 				}
 				return;
 			}
 			ApplyRandomBleedingWound(player);
-			TR_Notify.Send(player, "Your ruined gloves fail to protect you. You cut yourself while rummaging!");
+			TR_Notify.Send(player, TR_LootSettingsManager.GetHazardRuinedGlovesCutText());
 			return;
 		}
 
 		ApplyRandomBleedingWound(player);
-		TR_Notify.Send(player, "You cut yourself while rummaging!");
+		TR_Notify.Send(player, TR_LootSettingsManager.GetHazardNoGlovesCutText());
 	}
 
 	protected ItemBase GetPlayerGloves(PlayerBase player)

@@ -170,18 +170,51 @@ class TR_RummageEventManager
         TR_RummageEventRoot tmp = new TR_RummageEventRoot();
         JsonFileLoader<TR_RummageEventRoot>.JsonLoadFile(path, tmp);
 
+
         if (!tmp || !tmp.Categories)
         {
             TR_Debug.Error("[RummageEventManager] LootSettings.json has no Categories; events disabled.");
             return;
         }
 
-        s_Cache = tmp;
+        // Normalize chances to 0..100: treat 0<chance<=1 as decimals and clamp out-of-range
+        for (int i2 = 0; i2 < tmp.Categories.Count(); i2++)
+        {
+            string ck = tmp.Categories.GetKey(i2);
+            TR_RummageEventCategoryConfig cat = tmp.Categories.Get(ck);
+            if (!cat || !cat.Events) continue;
+            TR_RummageEventConfig ev = cat.Events;
+            if (ev)
+            {
+                if (ev.ZombieSpawn && ev.ZombieSpawn.Chance > 0.0 && ev.ZombieSpawn.Chance <= 1.0) ev.ZombieSpawn.Chance = ev.ZombieSpawn.Chance * 100.0;
+                if (ev.Smoke && ev.Smoke.Chance > 0.0 && ev.Smoke.Chance <= 1.0) ev.Smoke.Chance = ev.Smoke.Chance * 100.0;
+                if (ev.Gas && ev.Gas.Chance > 0.0 && ev.Gas.Chance <= 1.0) ev.Gas.Chance = ev.Gas.Chance * 100.0;
+                if (ev.KnockOut && ev.KnockOut.Chance > 0.0 && ev.KnockOut.Chance <= 1.0) ev.KnockOut.Chance = ev.KnockOut.Chance * 100.0;
+                if (ev.Shock && ev.Shock.Chance > 0.0 && ev.Shock.Chance <= 1.0) ev.Shock.Chance = ev.Shock.Chance * 100.0;
+                if (ev.SirenAlarm && ev.SirenAlarm.Chance > 0.0 && ev.SirenAlarm.Chance <= 1.0) ev.SirenAlarm.Chance = ev.SirenAlarm.Chance * 100.0;
+
+                if (ev.ZombieSpawn && ev.ZombieSpawn.Chance < 0.0) ev.ZombieSpawn.Chance = 0.0;
+                if (ev.ZombieSpawn && ev.ZombieSpawn.Chance > 100.0) ev.ZombieSpawn.Chance = 100.0;
+                if (ev.Smoke && ev.Smoke.Chance < 0.0) ev.Smoke.Chance = 0.0;
+                if (ev.Smoke && ev.Smoke.Chance > 100.0) ev.Smoke.Chance = 100.0;
+                if (ev.Gas && ev.Gas.Chance < 0.0) ev.Gas.Chance = 0.0;
+                if (ev.Gas && ev.Gas.Chance > 100.0) ev.Gas.Chance = 100.0;
+                if (ev.KnockOut && ev.KnockOut.Chance < 0.0) ev.KnockOut.Chance = 0.0;
+                if (ev.KnockOut && ev.KnockOut.Chance > 100.0) ev.KnockOut.Chance = 100.0;
+                if (ev.Shock && ev.Shock.Chance < 0.0) ev.Shock.Chance = 0.0;
+                if (ev.Shock && ev.Shock.Chance > 100.0) ev.Shock.Chance = 100.0;
+                if (ev.SirenAlarm && ev.SirenAlarm.Chance < 0.0) ev.SirenAlarm.Chance = 0.0;
+                if (ev.SirenAlarm && ev.SirenAlarm.Chance > 100.0) ev.SirenAlarm.Chance = 100.0;
+            }
+        }
+
+s_Cache = tmp;
     }
 
     protected static float Rand01()
     {
-        return Math.RandomFloatInclusive(0.0, 1.0);
+        int r = Math.RandomIntInclusive(0, 100);
+        return r;
     }
 
     protected static string GetPlayerNameSafe(PlayerBase player)
@@ -266,25 +299,14 @@ class TR_RummageEventManager
         TR_Debug.Log("[RummageEvent] AggroExistingInfectedNear affected='" + affected.ToString() + "' range='" + range.ToString() + "' pos='" + VecToShortStr(atPos) + "'.");
     }
 
-    protected static void PlayZombieAlertSound(PlayerBase player, vector soundPos)
+    protected static void PlayZombieAlertSound(PlayerBase player, vector soundPos, float radiusM)
     {
         if (GetGame().IsMultiplayer() && GetGame().IsServer())
         {
-            if (player)
-            {
-                PlayerIdentity id = player.GetIdentity();
-                if (id)
-                {
-                    Param2<int, vector> p = new Param2<int, vector>(TR_Constants.TR_AUDIO_KIND_ZOMBIE, soundPos);
-                    player.RPCSingleParam(TR_Constants.RPC_ID_TR_AUDIO, p, true, id);
-                    return;
-                }
-                TR_Debug.Log("[RummageEvent] ZombieSpawn sound fallback: missing identity for player");
-            }
-            else
-            {
-                TR_Debug.Log("[RummageEvent] ZombieSpawn sound fallback: player is null");
-            }
+            float rr = radiusM;
+            if (rr <= 0) rr = 50.0;
+            BroadcastAudioInRange(TR_Constants.TR_AUDIO_KIND_ZOMBIE, soundPos, rr);
+            return;
         }
 
         if (!GetGame().IsMultiplayer() || GetGame().IsClient())
@@ -292,6 +314,7 @@ class TR_RummageEventManager
             TR_Audio.PlayRandomFallingObjectAt(soundPos, player);
         }
     }
+
 
     // Shock SFX
     protected static void PlayShockSound(PlayerBase player, vector soundPos)
@@ -393,13 +416,13 @@ class TR_RummageEventManager
         }
     }
 
-    protected static void TryZombieSpawn(PlayerBase player, vector pos, TR_RummageEvent_ZombieSpawn cfg)
-    {
-        if (cfg.Chance <= 0.0) return;
-        float roll = Rand01();
-        if (roll > cfg.Chance) return;
+    protected static bool TryZombieSpawn(PlayerBase player, vector pos, TR_RummageEvent_ZombieSpawn cfg)
+    {        float roll = Rand01();
 
-        int nmin = cfg.CountMin;
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME ZombieSpawn result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME ZombieSpawn result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }int nmin = cfg.CountMin;
         int nmax = cfg.CountMax;
         if (nmin < 1) nmin = 1;
         if (nmax < nmin) nmax = nmin;
@@ -453,7 +476,9 @@ class TR_RummageEventManager
         if (spawned <= 0)
         {
             TR_Debug.Log("[RummageEvent] FAILED 'ZombieSpawn': no infected created for player='" + GetPlayerNameSafe(player) + "' at pos=" + VecToShortStr(pos) + "'. Wrong definition in LootSettings.json?");
-            return;
+            TR_Debug.Log("[RummageEvent] OUTCOME ZombieSpawn result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false;
+
         }
 
         for (int j = 0; j < spawnedList.Count(); j++)
@@ -466,68 +491,83 @@ class TR_RummageEventManager
         AggroExistingInfectedNear(player, pos, r);
 
         vector soundPos = pos;
+        float s = cfg.AlertNoiseStrength;
+        if (s <= 0) s = 50.0;
+
         soundPos[1] = GetGame().SurfaceY(soundPos[0], soundPos[2]) + 0.3;
-        PlayZombieAlertSound(player, soundPos);
+        PlayZombieAlertSound(player, soundPos, s);
 
         if (player && cfg.FlavorText != "")
         {
             TR_Notify.Send(player, cfg.FlavorText);
         }
 
-        TR_Debug.Log("[RummageEvent] TRIGGERED 'ZombieSpawn' for player='" + GetPlayerNameSafe(player) + "': count='" + spawned.ToString() + "' radius='" + cfg.SpawnRadius.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + " pos=" + VecToShortStr(pos) + "'.");
-    }
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'ZombieSpawn' for player='" + GetPlayerNameSafe(player) + "': count='" + spawned.ToString() + "' radius='" + cfg.SpawnRadius.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(pos) + "'.");
+            TR_Debug.Log("[RummageEvent] OUTCOME ZombieSpawn result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return true;
+}
 
-    protected static void TrySmoke(PlayerBase player, vector pos, TR_RummageEvent_Smoke cfg)
+
+    protected static bool TrySmoke(PlayerBase player, vector pos, TR_RummageEvent_Smoke cfg)
     {
-        if (cfg.Chance <= 0.0) return;
         float roll = Rand01();
-        if (roll > cfg.Chance) return;
-        if (cfg.Classname == "") return;
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME Smoke result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
+        roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME Smoke result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
+        if (cfg.Classname == "") { TR_Debug.Log("[RummageEvent] OUTCOME Smoke result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
 
         vector sp = pos;
         sp[1] = GetGame().SurfaceY(sp[0], sp[2]);
         EntityAI eai = EntityAI.Cast(GetGame().CreateObjectEx(cfg.Classname, sp, ECE_PLACE_ON_SURFACE));
-        if (eai)
+        if (!eai)
         {
-            Grenade_Base gb = Grenade_Base.Cast(eai);
-            if (gb)
-            {
-                gb.SetFuseDelay(cfg.FuseSeconds);
-                gb.Unpin();
-                if (player && cfg.FlavorText != "")
-                {
-                    TR_Notify.Send(player, cfg.FlavorText);
-                }
-                TR_Debug.Log("[RummageEvent] TRIGGERED 'Smoke' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
-            }
+            TR_Debug.Log("[RummageEvent] OUTCOME Smoke result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); 
+            return false;
         }
-    }
 
-    protected static void TryGas(PlayerBase player, vector pos, TR_RummageEvent_Gas cfg)
+        Grenade_Base gb = Grenade_Base.Cast(eai);
+        if (gb)
+        {
+            gb.SetFuseDelay(cfg.FuseSeconds);
+            gb.Unpin();
+        }
+
+        if (player && cfg.FlavorText != "") { TR_Notify.Send(player, cfg.FlavorText); }
+
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'Smoke' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
+        TR_Debug.Log("[RummageEvent] OUTCOME Smoke result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+        return true;
+}
+
+
+    protected static bool TryGas(PlayerBase player, vector pos, TR_RummageEvent_Gas cfg)
     {
-        if (cfg.Chance <= 0.0) return;
         float roll = Rand01();
-        if (roll > cfg.Chance) return;
-        if (cfg.Classname == "") return;
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME PoisonGas result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
+        roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME PoisonGas result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
+        if (cfg.Classname == "") { TR_Debug.Log("[RummageEvent] OUTCOME PoisonGas result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); return false; }
 
         vector sp = pos;
         sp[1] = GetGame().SurfaceY(sp[0], sp[2]);
         EntityAI eai = EntityAI.Cast(GetGame().CreateObjectEx(cfg.Classname, sp, ECE_PLACE_ON_SURFACE));
-        if (eai)
+        if (!eai)
         {
-            Grenade_Base gb = Grenade_Base.Cast(eai);
-            if (gb)
-            {
-                gb.SetFuseDelay(cfg.FuseSeconds);
-            }
-            eai.SetHealth("", "", 0.0);
-            if (player && cfg.FlavorText != "")
-            {
-                TR_Notify.Send(player, cfg.FlavorText);
-            }
-            TR_Debug.Log("[RummageEvent] TRIGGERED 'PoisonGas' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
+            TR_Debug.Log("[RummageEvent] OUTCOME PoisonGas result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'."); 
+            return false;
         }
-    }
+
+        Grenade_Base gb = Grenade_Base.Cast(eai);
+        if (gb) { gb.SetFuseDelay(cfg.FuseSeconds); }
+        eai.SetHealth("", "", 0.0);
+
+        if (player && cfg.FlavorText != "") { TR_Notify.Send(player, cfg.FlavorText); }
+
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'PoisonGas' for player='" + GetPlayerNameSafe(player) + "': class='" + cfg.Classname + "' fuse_s='" + cfg.FuseSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(sp) + "'.");
+        TR_Debug.Log("[RummageEvent] OUTCOME PoisonGas result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+        return true;
+}
+
 
     protected static void RestoreShock(PlayerBase p, float amount)
     {
@@ -536,14 +576,14 @@ class TR_RummageEventManager
         TR_Debug.Log("[RummageEvent] RECOVER player='" + GetPlayerNameSafe(p) + "': KnockOut amount='" + amount.ToString() + "' pos='" + VecToShortStr(p.GetPosition()) + "'.");
     }
 
-    protected static void TryKnockOut(PlayerBase player, TR_RummageEvent_KnockOut cfg)
-    {
-        if (cfg.Chance <= 0.0) return;
-        float roll = Rand01();
-        if (roll > cfg.Chance) return;
-        if (!player) return;
+    protected static bool TryKnockOut(PlayerBase player, TR_RummageEvent_KnockOut cfg)
+    {        float roll = Rand01();
 
-        float curShock = player.GetHealth("", "Shock");
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME KnockOut result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME KnockOut result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }if (!player) { TR_Debug.Log("[RummageEvent] OUTCOME KnockOut result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }float curShock = player.GetHealth("", "Shock");
         float drop = curShock + 5.0;
         player.AddHealth("", "Shock", -drop);
 
@@ -567,17 +607,20 @@ class TR_RummageEventManager
         GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(RestoreShock, ms, false, player, drop);
 
         TR_Debug.Log("[RummageEvent] TRIGGERED 'KnockOut' for player='" + GetPlayerNameSafe(player) + "': KO_drop='" + drop.ToString() + "' hp_dmg='" + hpDmg.ToString() + "' duration_s='" + cfg.DurationSeconds.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(player.GetPosition()) + "'.");
-    }
+            TR_Debug.Log("[RummageEvent] OUTCOME KnockOut result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return true;
+}
+
 
     // Shock
-    protected static void TryShock(PlayerBase player, TR_RummageEvent_Shock cfg)
-    {
-        if (cfg.Chance <= 0.0) return;
-        float roll = Rand01();
-        if (roll > cfg.Chance) return;
-        if (!player) return;
+    protected static bool TryShock(PlayerBase player, TR_RummageEvent_Shock cfg)
+    {        float roll = Rand01();
 
-        float shockAmt = cfg.ShockAmount;
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME Shock result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME Shock result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }if (!player) { TR_Debug.Log("[RummageEvent] OUTCOME Shock result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }float shockAmt = cfg.ShockAmount;
         if (shockAmt < 0.0) shockAmt = -shockAmt;
         player.AddHealth("", "Shock", -shockAmt);
 
@@ -597,16 +640,19 @@ class TR_RummageEventManager
         }
 
         TR_Debug.Log("[RummageEvent] TRIGGERED 'Shock' for player='" + GetPlayerNameSafe(player) + "': shock='" + shockAmt.ToString() + "' hp_dmg='" + hpDmg.ToString() + "' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(player.GetPosition()) + "'.");
-    }
+            TR_Debug.Log("[RummageEvent] OUTCOME Shock result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return true;
+}
+
 
     // Siren
-    protected static void TrySirenAlarm(PlayerBase player, vector pos, TR_RummageEvent_SirenAlarm cfg)
-    {
-        if (cfg.Chance <= 0.0) return;
-        float roll = Rand01();
-        if (roll > cfg.Chance) return;
+    protected static bool TrySirenAlarm(PlayerBase player, vector pos, TR_RummageEvent_SirenAlarm cfg)
+    {        float roll = Rand01();
 
-        vector soundPos = pos;
+        if (cfg.Chance <= 0.0) { TR_Debug.Log("[RummageEvent] OUTCOME SirenAlarm result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }roll = Rand01();
+        if (roll > cfg.Chance) { TR_Debug.Log("[RummageEvent] OUTCOME SirenAlarm result='false' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return false; }vector soundPos = pos;
         soundPos[1] = GetGame().SurfaceY(soundPos[0], soundPos[2]) + 0.3;
         PlaySirenSound(soundPos);
 
@@ -615,8 +661,11 @@ class TR_RummageEventManager
             TR_Notify.Send(player, cfg.FlavorText);
         }
 
-        TR_Debug.Log("[RummageEvent] TRIGGERED 'SirenAlarm' for player='" + GetPlayerNameSafe(player) + "': chance='" + cfg.Chance.ToString() + " roll='" + roll.ToString() + "' pos='" + VecToShortStr(soundPos) + "'.");
-    }
+        TR_Debug.Log("[RummageEvent] TRIGGERED 'SirenAlarm' for player='" + GetPlayerNameSafe(player) + "': chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "' pos='" + VecToShortStr(soundPos) + "'.");
+            TR_Debug.Log("[RummageEvent] OUTCOME SirenAlarm result='true' chance='" + cfg.Chance.ToString() + "' roll='" + roll.ToString() + "'.");
+            return true;
+}
+
 
     protected static TR_RummageEventConfig GetEventsForCategory(string category)
     {
@@ -638,11 +687,27 @@ class TR_RummageEventManager
         string pname = GetPlayerNameSafe(player);
         TR_Debug.Log("[RummageEvent] EVALUATE EVENT running for player='" + pname + "' category='" + category + "' pos='" + VecToShortStr(atPos) + "'.");
 
-        if (ev.ZombieSpawn) TryZombieSpawn(player, atPos, ev.ZombieSpawn);
-        if (ev.Smoke)       TrySmoke(player, atPos, ev.Smoke);
-        if (ev.Gas)         TryGas(player, atPos, ev.Gas);
-        if (ev.KnockOut)    TryKnockOut(player, ev.KnockOut);
-        if (ev.Shock)       TryShock(player, ev.Shock);
-        if (ev.SirenAlarm)  TrySirenAlarm(player, atPos, ev.SirenAlarm);
+        array<int> order = new array<int>;
+        if (ev.ZombieSpawn) order.Insert(0);
+        if (ev.Smoke) order.Insert(1);
+        if (ev.Gas) order.Insert(2);
+        if (ev.KnockOut) order.Insert(3);
+        if (ev.Shock) order.Insert(4);
+        if (ev.SirenAlarm) order.Insert(5);
+        for (int ii = order.Count() - 1; ii > 0; ii--)
+        {
+            int jj = Math.RandomInt(0, ii + 1);
+            int tmp = order[ii]; order[ii] = order[jj]; order[jj] = tmp;
+        }
+        for (int k = 0; k < order.Count(); k++)
+        {
+            int t = order[k];
+            if (t == 0) { if (TryZombieSpawn(player, atPos, ev.ZombieSpawn)) return; }
+            else if (t == 1) { if (TrySmoke(player, atPos, ev.Smoke)) return; }
+            else if (t == 2) { if (TryGas(player, atPos, ev.Gas)) return; }
+            else if (t == 3) { if (TryKnockOut(player, ev.KnockOut)) return; }
+            else if (t == 4) { if (TryShock(player, ev.Shock)) return; }
+            else if (t == 5) { if (TrySirenAlarm(player, atPos, ev.SirenAlarm)) return; }
+        }
     }
 }
